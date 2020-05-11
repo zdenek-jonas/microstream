@@ -4,7 +4,6 @@ import one.microstream.collections.BulkList;
 import one.microstream.collections.EqHashEnum;
 import one.microstream.collections.types.XGettingSequence;
 import one.microstream.collections.types.XGettingTable;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.types.PersistenceTypeDefinition;
 import one.microstream.persistence.types.PersistenceTypeDefinitionCreator;
 import one.microstream.persistence.types.PersistenceTypeDefinitionMember;
@@ -51,8 +50,6 @@ public class ComTypeDefinitionBuilder
 	
 	public XGettingSequence<PersistenceTypeDefinition> buildTypeDefinitions(final String typeEntry)
 	{
-		XDebug.println("build type definition for " + typeEntry);
-		
 		final PersistenceTypeDescriptionResolver typeResolver = this.typeDescriptionResolverProvider.provideTypeDescriptionResolver();
 		
 		final XGettingSequence<? extends PersistenceTypeDictionaryEntry> entries = this.typeDictionaryParser.parseTypeDictionaryEntries(typeEntry);

@@ -2,7 +2,6 @@ package one.microstream.com.binarydynamic;
 
 import one.microstream.com.ComChannel;
 import one.microstream.com.ComProtocol;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.types.PersistenceManager;
 
 public abstract class ComChannelDynamic<C> implements ComChannel
@@ -74,22 +73,16 @@ public abstract class ComChannelDynamic<C> implements ComChannel
 		{
 			received = this.persistenceManager.get();
 			this.persistenceManager.objectRegistry().clear();
-			XDebug.println("received data...");
-
+	
 			final ComHandlerReceive<?> handler = this.handlers.lookupReceive(received.getClass());
 			if(handler != null )
 			{
 				received = handler.processMessage(received);
-				XDebug.println("received handled object: " + received);
+			
 				if(!handler.continueReceiving())
 				{
 					return received;
 				}
-					
-			}
-			else
-			{
-				XDebug.println("received unhandled object");
 			}
 		}
 		

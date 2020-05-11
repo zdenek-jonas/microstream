@@ -16,7 +16,6 @@ import one.microstream.com.ComPersistenceAdaptor;
 import one.microstream.com.ComPersistenceAdaptorCreator;
 import one.microstream.com.ComProtocol;
 import one.microstream.com.binary.ComPersistenceChannelBinary;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.binary.types.BinaryPersistenceFoundation;
 import one.microstream.persistence.types.Persistence;
@@ -65,8 +64,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		this.entityTypes        = entityTypes       ;
 		this.hostByteOrder      = hostByteOrder     ;
 		this.hostIdStrategy     = hostIdStrategy    ;
-						
-		XDebug.println("****** ComPersistenceAdaptorBinaryDynamic New ******");
 	}
 	
 	public static ComPersistenceAdaptorBinaryDynamic New(
@@ -78,9 +75,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 			final PersistenceIdStrategy          hostIdStrategy
 		)
 		{
-		
-			XDebug.println("ComPersistenceAdaptorBinaryDynamic New");
-		
 			return new ComPersistenceAdaptorBinaryDynamic(
 				notNull(foundation)        ,
 				notNull(bufferSizeProvider),
@@ -98,7 +92,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	@Override
 	public PersistenceFoundation<?, ?> persistenceFoundation()
 	{
-		XDebug.println("persistenceFoundation");
 		return this.foundation;
 	}
 	
@@ -106,42 +99,35 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	@Override
 	public void iterateEntityTypes(final Consumer<? super Class<?>> iterator)
 	{
-		XDebug.println("iterator");
 		this.entityTypes.iterate(iterator);
 	}
 
 	@Override
 	public PersistenceIdStrategy hostInitializationIdStrategy()
 	{
-		XDebug.println("hostInitializationIdStrategy");
 		return this.hostInitIdStrategy;
 	}
 
 	@Override
 	public PersistenceIdStrategy hostIdStrategy()
 	{
-		XDebug.println("hostIdStrategy");
 		return this.hostIdStrategy;
 	}
 
 	@Override
 	public ByteOrder hostByteOrder()
 	{
-		XDebug.println("hostByteOrder");
 		return this.hostByteOrder;
 	}
 	
 	private BufferSizeProvider bufferSizeProvider()
 	{
-		XDebug.println("bufferSizeProvider");
 		return this.bufferSizeProvider;
 	}
 			
 	@Override
 	public BinaryPersistenceFoundation<?> createInitializationFoundation()
 	{
-		XDebug.println("createInitializationFoundation");
-		
 		final BinaryPersistenceFoundation<?> initFoundation = this.foundation.Clone();
 		
 		initFoundation.setContextDispatcher(
@@ -161,9 +147,8 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	}
 
 	@Override
-	public PersistenceFoundation<?, ?> provideHostPersistenceFoundation(final SocketChannel connection) {
-		XDebug.println("provideHostPersistenceFoundation connection=" + (connection != null));
-
+	public PersistenceFoundation<?, ?> provideHostPersistenceFoundation(final SocketChannel connection)
+	{
 		if(connection != null)
 		{
 			return this.hostConnectionFoundation(connection);
@@ -174,8 +159,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	
 	private BinaryPersistenceFoundation<?> hostConnectionFoundation()
 	{
-		XDebug.println("hostConnectionFoundation no connection");
-		
 		final BinaryPersistenceFoundation<?> hostFoundation = this.createInitializationFoundation();
 		
 		hostFoundation.setTargetByteOrder      (this.hostByteOrder());
@@ -194,8 +177,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 
 	private PersistenceFoundation<?, ?> hostConnectionFoundation(final SocketChannel connection)
 	{
-		XDebug.println("hostConnectionFoundation with connection");
-		
 		final BinaryPersistenceFoundation<?> hostFoundation = this.hostConnectionFoundation();
 				
 		final PersistenceTypeHandlerManager<Binary> typeHandlerManager = hostFoundation.getTypeHandlerManager();
@@ -220,8 +201,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	public BinaryPersistenceFoundation<?> provideClientPersistenceFoundation(final SocketChannel connection,
 			final ComProtocol protocol)
 	{
-		XDebug.println("provideClientPersistenceFoundation");
-		XDebug.println("foundation byteOrder " + this.foundation.getTargetByteOrder() + " protocol " + protocol.byteOrder());
 		final BinaryPersistenceFoundation<?> clientFoundation = this.createInitializationFoundation();
 				
 		clientFoundation.setTargetByteOrder      (protocol.byteOrder());
@@ -258,8 +237,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		final ComProtocol protocol,
 		final ComHost<SocketChannel> parent)
 	{
-		XDebug.println("createHostChannel");
-		
 		final PersistenceManager<?> pm = this.provideHostPersistenceManager(connection);
 		return new ComHostChannelDynamic<>(pm, connection, protocol, parent);
 	}
@@ -270,10 +247,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		final ComProtocol protocol,
 		final ComClient<SocketChannel> parent)
 	{
-		XDebug.println("createClientChannel");
-		
 		final BinaryPersistenceFoundation<?> clientFoundation = this.provideClientPersistenceFoundation(connection, protocol);
-		
 		final PersistenceTypeHandlerManager<Binary> thm = clientFoundation.getTypeHandlerManager();
 		
 		final ComTypeDefinitionBuilder typeDefinitionBuilder = new ComTypeDefinitionBuilder(
@@ -291,8 +265,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 
 	public PersistenceTypeDictionary provideTypeDictionaryInternal()
 	{
-		XDebug.println("provideTypeDictionary");
-		
 		final PersistenceFoundation<?, ?> initFoundation = this.createInitializationFoundation();
 		
 		initFoundation.setTargetByteOrder      (this.hostByteOrder());
@@ -323,8 +295,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	@Override
 	public PersistenceTypeDictionaryView provideTypeDictionary()
 	{
-		XDebug.println("provideTypeDictionary cachedTypeDictionary=" + (this.cachedTypeDictionary != null));
-		
 		if(this.cachedTypeDictionary == null)
 		{
 			synchronized(this)
@@ -346,7 +316,6 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	
 	public static ComPersistenceAdaptorCreator<SocketChannel> Creator()
 	{
-		XDebug.println("create BinaryPersistenceFoundation");
 		return Creator(
 			BinaryPersistenceFoundation.New()
 		);

@@ -2,7 +2,6 @@ package one.microstream.com.binarydynamic;
 
 import one.microstream.collections.types.XGettingSequence;
 import one.microstream.exceptions.BaseException;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.types.PersistenceTypeDefinition;
 import one.microstream.persistence.types.PersistenceTypeHandlerManager;
@@ -42,9 +41,7 @@ public class ComHandlerReceiveMessageNewType implements ComHandlerReceive<ComMes
 	public Object processMessage(final ComMessageNewType message)
 	{
 		final String typeEntry = message.typeEntry();
-		//final String typeEntry = "§%$&/(\"%";
-		XDebug.println("got: " + typeEntry);
-				
+		
 		try
 		{
 			final XGettingSequence<PersistenceTypeDefinition> defs = this.typeDefintionBuilder.buildTypeDefinitions(typeEntry);
@@ -52,13 +49,11 @@ public class ComHandlerReceiveMessageNewType implements ComHandlerReceive<ComMes
 		}
 		catch(final BaseException e)
 		{
-			XDebug.println("sending error messege");
 			this.comChannel.send(new ComMessageClientError(e));
 			this.comChannel.close();
 			throw e;
 		}
 		
-		XDebug.println("sending answer OK");
 		this.comChannel.send(new ComMessageStatus(true));
 		
 		return null;

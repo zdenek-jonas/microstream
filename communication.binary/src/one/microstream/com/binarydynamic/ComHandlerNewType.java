@@ -1,7 +1,6 @@
 package one.microstream.com.binarydynamic;
 
 import one.microstream.collections.types.XGettingSequence;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.internal.AbstractBinaryHandlerCustom;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.types.PersistenceLoadHandler;
@@ -73,17 +72,13 @@ public class ComHandlerNewType extends AbstractBinaryHandlerCustom<NewPersistenc
 	public void store(final Binary data, final NewPersistenceTypeDefinition instance, final long objectId,
 			final PersistenceStoreHandler<Binary> handler)
 	{
-			XDebug.println("Storing " + instance.typeEntry());
 			data.storeStringSingleValue(this.typeId(), objectId, instance.typeEntry());
-			XDebug.println("Stored " + instance.typeEntry());
 	}
 
 	@Override
 	public NewPersistenceTypeDefinition create(final Binary data, final PersistenceLoadHandler handler)
 	{
-		
 		final String typeEntry = String.valueOf(data.build_chars(0));
-		XDebug.println("got: " + typeEntry);
 				
 		final XGettingSequence<PersistenceTypeDefinition> defs = this.typeDefintionBuilder.buildTypeDefinitions(typeEntry);
 		defs.forEach(d -> this.typeHandlerManager.ensureTypeHandler(d));
