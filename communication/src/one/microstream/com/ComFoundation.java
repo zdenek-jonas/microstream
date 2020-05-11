@@ -54,6 +54,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public ComConnectionLogicDispatcher<C> getConnectionLogicDispatcher();
 	
+	//Custom handler for channel errors
+	public ComChannelExceptionHandler getChannelExceptionHandler();
 	
 	// the port applies to host and client alike, that's what using a common channel is all about.
 	public int getPort();
@@ -117,6 +119,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public F setClientTargetAddress(InetSocketAddress clientTargetAddress);
 	
+	public F setChannelExceptionHandler(ComChannelExceptionHandler exceptionHandler);
+	
 	public ComHost<C> createHost();
 	
 	public ComClient<C> createClient();
@@ -164,6 +168,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		
 		private ComClientCreator<C>             clientCreator            ;
 		private ComConnectionLogicDispatcher<C> connectionLogicDispatcher;
+		private ComChannelExceptionHandler      channelExceptionHandler;
 
 		
 		
@@ -440,6 +445,17 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 			
 			return this.getConnectionLogicDispatcher().dispatch(this.connectionAcceptorCreator);
 		}
+		
+		@Override
+		public ComChannelExceptionHandler getChannelExceptionHandler()
+		{
+			if(this.channelExceptionHandler == null)
+			{
+				this.channelExceptionHandler = this.ensureChannelExceptionHandler();
+			}
+			
+			return this.channelExceptionHandler;
+		}
 
 		/*
 		 * "ensure" methods guarantee that a non-null/non-zero value is returned.
@@ -592,7 +608,11 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 			);
 		}
 				
-
+		protected ComChannelExceptionHandler ensureChannelExceptionHandler()
+		{
+			return ComChannelExceptionHandler.New();
+		}
+		
 		
 		@Override
 		public F setProtocolName(final String protocolName)
@@ -781,17 +801,25 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 			this.hostIdStrategy = hostIdStrategy;
 			return this.$();
 		}
+		
+		@Override
+		public F setChannelExceptionHandler(final ComChannelExceptionHandler exceptionHandler)
+		{
+			this.channelExceptionHandler = exceptionHandler;
+			return this.$();
+		}
 				
 		@Override
 		public ComHost<C> createHost()
 		{
 			final ComConnectionAcceptorCreator<C> conAccCreator = this.getConnectionAcceptorCreator();
 			final ComConnectionAcceptor<C> connectionAcceptor = conAccCreator.createConnectionAcceptor(
-				this.getProtocolProvider()       ,
-				this.getProtocolStringConverter(),
-				this.getConnectionHandler()      ,
-				this.getHostPersistenceAdaptor() ,
-				this.getHostChannelAcceptor()
+				this.getProtocolProvider()          ,
+				this.getProtocolStringConverter()   ,
+				this.getConnectionHandler()         ,
+				this.getHostPersistenceAdaptor()    ,
+				this.getHostChannelAcceptor()       ,
+				this.getChannelExceptionHandler()
 			);
 
 			final ComHostCreator<C> hostCreator = this.getHostCreator();

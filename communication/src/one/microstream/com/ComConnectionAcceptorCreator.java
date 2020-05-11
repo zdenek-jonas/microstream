@@ -9,7 +9,8 @@ public interface ComConnectionAcceptorCreator<C>
 		ComProtocolStringConverter protocolStringConverter,
 		ComConnectionHandler<C>    connectionHandler      ,
 		ComPersistenceAdaptor<C>   persistenceAdaptor     ,
-		ComHostChannelAcceptor<C>  channelAcceptor
+		ComHostChannelAcceptor<C>  channelAcceptor        ,
+		ComChannelExceptionHandler    exceptionHandler
 	);
 	
 	
@@ -41,7 +42,8 @@ public interface ComConnectionAcceptorCreator<C>
 			final ComProtocolStringConverter protocolStringConverter,
 			final ComConnectionHandler<C>    connectionHandler      ,
 			final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
-			final ComHostChannelAcceptor<C>  channelAcceptor
+			final ComHostChannelAcceptor<C>  channelAcceptor        ,
+			final ComChannelExceptionHandler exceptionHandler
 		)
 		{
 			return ComConnectionAcceptor.New(
@@ -49,7 +51,8 @@ public interface ComConnectionAcceptorCreator<C>
 				protocolStringConverter,
 				connectionHandler      ,
 				persistenceAdaptor     ,
-				channelAcceptor
+				channelAcceptor        ,
+				exceptionHandler
 			);
 		}
 		

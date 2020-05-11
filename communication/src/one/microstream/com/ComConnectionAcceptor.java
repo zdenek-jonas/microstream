@@ -24,11 +24,12 @@ public interface ComConnectionAcceptor<C>
 	}
 	
 	public static <C> ComConnectionAcceptor<C> New(
-		final ComProtocolProvider<C>     protocolProvider       ,
-		final ComProtocolStringConverter protocolStringConverter,
-		final ComConnectionHandler<C>    connectionHandler      ,
-		final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
-		final ComHostChannelAcceptor<C>  channelAcceptor
+		final ComProtocolProvider<C>        protocolProvider       ,
+		final ComProtocolStringConverter    protocolStringConverter,
+		final ComConnectionHandler<C>       connectionHandler      ,
+		final ComPersistenceAdaptor<C>      persistenceAdaptor     ,
+		final ComHostChannelAcceptor<C>     channelAcceptor		   ,
+		final ComChannelExceptionHandler    exceptionHandler
 	)
 	{
 		
@@ -37,7 +38,8 @@ public interface ComConnectionAcceptor<C>
 			notNull(protocolStringConverter),
 			notNull(connectionHandler)      ,
 			notNull(persistenceAdaptor)     ,
-			notNull(channelAcceptor)
+			notNull(channelAcceptor)        ,
+			notNull(exceptionHandler)
 		);
 	}
 	
@@ -52,6 +54,7 @@ public interface ComConnectionAcceptor<C>
 		private final ComConnectionHandler<C>    connectionHandler      ;
 		private final ComPersistenceAdaptor<C>   persistenceAdaptor     ;
 		private final ComHostChannelAcceptor<C>  channelAcceptor        ;
+		private final ComChannelExceptionHandler channelExceptionHandler;
 				
 		
 		
@@ -64,7 +67,8 @@ public interface ComConnectionAcceptor<C>
 			final ComProtocolStringConverter protocolStringConverter,
 			final ComConnectionHandler<C>    connectionHandler      ,
 			final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
-			final ComHostChannelAcceptor<C>  channelAcceptor
+			final ComHostChannelAcceptor<C>  channelAcceptor        ,
+			final ComChannelExceptionHandler exceptionHandler
 		)
 		{
 			super();
@@ -73,6 +77,7 @@ public interface ComConnectionAcceptor<C>
 			this.connectionHandler       = connectionHandler      ;
 			this.persistenceAdaptor      = persistenceAdaptor     ;
 			this.channelAcceptor         = channelAcceptor        ;
+			this.channelExceptionHandler = exceptionHandler       ;
 		}
 		
 		
@@ -96,7 +101,15 @@ public interface ComConnectionAcceptor<C>
 			this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
 			
 			final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
-			this.channelAcceptor.acceptChannel(channel);
+			
+			try
+			{
+				this.channelAcceptor.acceptChannel(channel);
+			}
+			catch(final Throwable e)
+			{
+				this.channelExceptionHandler.handleException(e, channel);
+			}
 		}
 		
 	}

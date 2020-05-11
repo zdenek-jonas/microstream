@@ -45,7 +45,8 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		////////////////////
 		
 		private final BufferSizeProvider bufferSizeProvider;
-		private       ByteBuffer         defaultBuffer     ;
+		private       ByteBuffer         defaultBufferRead;
+		private		  ByteBuffer		 defaultBufferWrite;
 		
 		
 		
@@ -65,16 +66,28 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		// methods //
 		////////////
 		
-		protected ByteBuffer ensureDefaultBuffer()
+		protected ByteBuffer ensureDefaultBufferRead()
 		{
-			if(this.defaultBuffer == null)
+			if(this.defaultBufferRead == null)
 			{
-				this.defaultBuffer = XMemory.allocateDirectNative(
+				this.defaultBufferRead = XMemory.allocateDirectNative(
 					this.bufferSizeProvider.provideBufferSize()
 				);
 			}
 			
-			return this.defaultBuffer;
+			return this.defaultBufferRead;
+		}
+		
+		protected ByteBuffer ensureDefaultBufferWrite()
+		{
+			if(this.defaultBufferWrite == null)
+			{
+				this.defaultBufferWrite = XMemory.allocateDirectNative(
+					this.bufferSizeProvider.provideBufferSize()
+				);
+			}
+			
+			return this.defaultBufferWrite;
 		}
 		
 	}
@@ -120,7 +133,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		protected XGettingCollection<? extends Binary> internalRead(final SocketChannel channel)
 			throws PersistenceExceptionTransfer
 		{
-			final ByteBuffer defaultBuffer = this.ensureDefaultBuffer();
+			final ByteBuffer defaultBuffer = this.ensureDefaultBufferRead();
 			
 //			this.DEBUG_printTargetByteOrder();
 			
@@ -161,7 +174,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 //			this.DEBUG_printTargetByteOrder();
 			
 			final ByteBuffer defaultBuffer = ComBinary.setChunkHeaderContentLength(
-				this.ensureDefaultBuffer(),
+				this.ensureDefaultBufferWrite(),
 				chunk.totalLength(),
 				this.switchByteOrder()
 			);
