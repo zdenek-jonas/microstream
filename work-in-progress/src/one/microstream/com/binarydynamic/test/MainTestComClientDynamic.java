@@ -1,8 +1,13 @@
 package one.microstream.com.binarydynamic.test;
 
+import java.nio.file.Paths;
+
 import one.microstream.com.ComChannel;
 import one.microstream.com.ComClient;
 import one.microstream.com.binarydynamic.ComBinaryDynamic;
+import one.microstream.com.tls.ComTLSConnectionHandler;
+import one.microstream.com.tls.TLSKeyManagerProvider;
+import one.microstream.com.tls.TLSTrustManagerProvider;
 import one.microstream.meta.XDebug;
 
 public class MainTestComClientDynamic
@@ -10,7 +15,13 @@ public class MainTestComClientDynamic
 	public static void main(final String[] args)
 	{
 		
-		final ComClient<?> client = ComBinaryDynamic.Client();
+		final ComClient<?> client = ComBinaryDynamic.Foundation()
+			.setConnectionHandler(ComTLSConnectionHandler.New(
+					new TLSKeyManagerProvider.Default(),
+					new TLSTrustManagerProvider.PKCS12(Paths.get("C:/Users/HaraldGrunwald/DevTSL/clientTrusts.pks"), new char[] {'m','i','c','r','o','s','t','r','e','a','m'})
+				))
+			.createClient();
+								
 		
 		// create a channel by connecting the client
 		final ComChannel channel = client.connect();

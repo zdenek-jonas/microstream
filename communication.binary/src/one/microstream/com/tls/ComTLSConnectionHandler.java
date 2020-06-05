@@ -22,11 +22,14 @@ import one.microstream.meta.XDebug;
 public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection> {
 
 	private final static boolean SERVER_MODE = false;
-	private final static boolean CLIENT_MODE = false;
+	private final static boolean CLIENT_MODE = true;
 	
 	private final SSLContext context;
 	private final String tlsProtocol = "TLSv1.2";
 
+	private final TLSKeyManagerProvider   keyManagerProvider;
+	private final TLSTrustManagerProvider trustManagerProvider;
+	
 	@Override
 	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address) {
 		XDebug.println("++");
@@ -108,16 +111,19 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		return null;
 	}
 
-	public static ComConnectionHandler<ComConnection> New()
+	public static ComConnectionHandler<ComConnection> New(final TLSKeyManagerProvider keyManagerProvider, final TLSTrustManagerProvider trustManagerProvider)
 	{
 		XDebug.println("++");
-		return new ComTLSConnectionHandler();
+		return new ComTLSConnectionHandler(keyManagerProvider, trustManagerProvider);
 	}
 	
-	private ComTLSConnectionHandler()
+	private ComTLSConnectionHandler(final TLSKeyManagerProvider keyManagerProvider, final TLSTrustManagerProvider trustManagerProvider)
 	{
 		super();
 		XDebug.println("++");
+		
+		this.keyManagerProvider   = keyManagerProvider;
+		this.trustManagerProvider = trustManagerProvider;
 				
 		try
 		{
@@ -130,7 +136,11 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		
 		try
 		{
-			this.context.init(null, null, null);
+			this.context.init(
+				this.keyManagerProvider.get(),
+				this.trustManagerProvider.get(),
+				null
+			);
 		}
 		catch (final KeyManagementException e)
 		{

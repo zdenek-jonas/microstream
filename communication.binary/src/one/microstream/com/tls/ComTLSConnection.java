@@ -6,11 +6,13 @@ import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLEngine;
 
 import one.microstream.com.ComConnection;
+import one.microstream.meta.XDebug;
 
 public class ComTLSConnection implements ComConnection
 {
 
 	public ComTLSConnection(final SocketChannel channel, final SSLEngine sslEngine) {
+		XDebug.println("++");
 		// TODO Auto-generated constructor stub
 	}
 
