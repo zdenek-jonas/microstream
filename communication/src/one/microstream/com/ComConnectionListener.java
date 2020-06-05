@@ -20,7 +20,7 @@ public interface ComConnectionListener<C>
 		);
 	}
 	
-	public final class Default implements ComConnectionListener<SocketChannel>
+	public final class Default implements ComConnectionListener<ComConnection>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// instance fields //
@@ -47,9 +47,10 @@ public interface ComConnectionListener<C>
 		////////////
 
 		@Override
-		public final SocketChannel listenForConnection()
+		public final ComConnection listenForConnection()
 		{
-			return XSockets.acceptSocketChannel(this.serverSocketChannel);
+			final SocketChannel channel = XSockets.acceptSocketChannel(this.serverSocketChannel);
+			return new ComConnection.Default(channel);
 		}
 
 		@Override

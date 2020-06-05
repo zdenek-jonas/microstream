@@ -2,7 +2,6 @@ package one.microstream.com;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.collections.HashEnum;
 import one.microstream.collections.types.XEnum;
@@ -846,7 +845,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	}
 	
 	public class Default<F extends ComFoundation.Default<F>>
-	extends ComFoundation.Abstract<SocketChannel, F>
+	extends ComFoundation.Abstract<ComConnection, F>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// constructors //
@@ -864,7 +863,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		////////////
 		
 		@Override
-		protected ComHostChannelAcceptor<SocketChannel> ensureHostChannelAcceptor()
+		protected ComHostChannelAcceptor<ComConnection> ensureHostChannelAcceptor()
 		{
 			return Com::bounce;
 		}

@@ -3,14 +3,13 @@ package one.microstream.com.binary;
 import static one.microstream.X.notNull;
 
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.X;
 import one.microstream.chars.VarString;
 import one.microstream.collections.types.XGettingCollection;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
 import one.microstream.com.ComPersistenceChannel;
-import one.microstream.com.XSockets;
 import one.microstream.memory.XMemory;
 import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.types.Binary;
@@ -24,7 +23,7 @@ import one.microstream.util.BufferSizeProvider;
 public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C, Binary>
 {
 	public static ComPersistenceChannelBinary.Default New(
-		final SocketChannel         channel           ,
+		final ComConnection         channel           ,
 		final BufferSizeProvider    bufferSizeProvider,
 		final ByteOrderTargeting<?> byteOrderTargeting
 	)
@@ -94,7 +93,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 	
 
 	
-	public final class Default extends ComPersistenceChannelBinary.Abstract<SocketChannel>
+	public final class Default extends ComPersistenceChannelBinary.Abstract<ComConnection>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// instance fields //
@@ -109,7 +108,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		/////////////////
 
 		Default(
-			final SocketChannel         channel           ,
+			final ComConnection         channel           ,
 			final BufferSizeProvider    bufferSizeProvider,
 			final ByteOrderTargeting<?> byteOrderTargeting
 		)
@@ -130,7 +129,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		}
 		
 		@Override
-		protected XGettingCollection<? extends Binary> internalRead(final SocketChannel channel)
+		protected XGettingCollection<? extends Binary> internalRead(final ComConnection channel)
 			throws PersistenceExceptionTransfer
 		{
 			final ByteBuffer defaultBuffer = this.ensureDefaultBufferRead();
@@ -168,7 +167,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		}
 
 		@Override
-		protected void internalWrite(final SocketChannel channel, final Binary chunk)
+		protected void internalWrite(final ComConnection channel, final Binary chunk)
 			throws PersistenceExceptionTransfer
 		{
 //			this.DEBUG_printTargetByteOrder();
@@ -196,7 +195,7 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 		
 		private final void close()
 		{
-			XSockets.closeChannel(this.getConnection());
+			this.getConnection().close();
 		}
 		
 		@Override

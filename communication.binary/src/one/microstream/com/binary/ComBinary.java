@@ -8,6 +8,7 @@ import one.microstream.X;
 import one.microstream.com.Com;
 import one.microstream.com.ComClient;
 import one.microstream.com.ComClientChannel;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
 import one.microstream.com.ComExceptionTimeout;
 import one.microstream.com.ComFoundation;
@@ -160,27 +161,27 @@ public class ComBinary
 	// convenience methods //
 	////////////////////////
 	
-	public static final ComHost<SocketChannel> Host()
+	public static final ComHost<ComConnection> Host()
 	{
 		return Com.Host(DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final int localHostPort
 	)
 	{
 		return Com.Host(localHostPort, DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final InetSocketAddress  targetAddress
 	)
 	{
 		return Com.Host(targetAddress, DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+	public static final ComHost<ComConnection> Host(
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(
@@ -189,9 +190,9 @@ public class ComBinary
 		);
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final int                                   localHostPort  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(
@@ -200,9 +201,9 @@ public class ComBinary
 		);
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final InetSocketAddress                     targetAddress  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(targetAddress, DefaultPersistenceAdaptorCreator(), channelAcceptor);
@@ -229,7 +230,7 @@ public class ComBinary
 	}
 	
 	public static final void runHost(
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		runHost(
@@ -240,7 +241,7 @@ public class ComBinary
 	
 	public static final void runHost(
 		final int                                   localHostPort  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		runHost(
@@ -251,21 +252,21 @@ public class ComBinary
 	
 	public static final void runHost(
 		final InetSocketAddress                     targetAddress  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
-		final ComHost<SocketChannel> host = Host(targetAddress, channelAcceptor);
+		final ComHost<ComConnection> host = Host(targetAddress, channelAcceptor);
 		host.run();
 	}
 	
-	public static final ComClient<SocketChannel> Client()
+	public static final ComClient<ComConnection> Client()
 	{
 		return Com.Client(
 			DefaultPersistenceAdaptorCreator()
 		);
 	}
 	
-	public static final ComClient<SocketChannel> Client(final int localHostPort)
+	public static final ComClient<ComConnection> Client(final int localHostPort)
 	{
 		return Com.Client(
 			localHostPort                     ,
@@ -273,7 +274,7 @@ public class ComBinary
 		);
 	}
 		
-	public static final ComClient<SocketChannel> Client(
+	public static final ComClient<ComConnection> Client(
 		final InetSocketAddress targetAddress
 	)
 	{
@@ -284,14 +285,14 @@ public class ComBinary
 	}
 	
 	
-	public static final ComClientChannel<SocketChannel> connect()
+	public static final ComClientChannel<ComConnection> connect()
 	{
 		return Client()
 			.connect()
 		;
 	}
 	
-	public static final ComClientChannel<SocketChannel> connect(
+	public static final ComClientChannel<ComConnection> connect(
 		final int localHostPort
 	)
 	{
@@ -300,7 +301,7 @@ public class ComBinary
 		;
 	}
 		
-	public static final ComClientChannel<SocketChannel> connect(
+	public static final ComClientChannel<ComConnection> connect(
 		final InetSocketAddress targetAddress
 	)
 	{
