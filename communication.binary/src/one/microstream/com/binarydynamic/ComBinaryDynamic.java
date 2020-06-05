@@ -10,6 +10,7 @@ import one.microstream.com.ComFoundation;
 import one.microstream.com.ComHost;
 import one.microstream.com.ComHostChannelAcceptor;
 import one.microstream.com.ComPersistenceAdaptorCreator;
+import one.microstream.com.tls.ComTLSConnectionHandler;
 
 public class ComBinaryDynamic
 {
@@ -21,7 +22,7 @@ public class ComBinaryDynamic
 			.setHostIdStrategy(ComDynamicIdStrategy.New(1_000_000_000_000_000_000L))
 			.setClientIdStrategy(ComDynamicIdStrategy.New(4_100_000_000_000_000_000L))
 			.registerEntityTypes(ComMessageNewType.class, ComMessageClientError.class, ComMessageStatus.class, ComMessageData.class)
-			//.setConnectionHandler(ComTLSConnectionHandler.New())
+			.setConnectionHandler(ComTLSConnectionHandler.New())
 		;
 	}
 
