@@ -2,7 +2,6 @@ package one.microstream.com.binary;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.X;
 import one.microstream.com.Com;
@@ -14,7 +13,6 @@ import one.microstream.com.ComExceptionTimeout;
 import one.microstream.com.ComFoundation;
 import one.microstream.com.ComHost;
 import one.microstream.com.ComHostChannelAcceptor;
-import one.microstream.com.XSockets;
 import one.microstream.memory.XMemory;
 import one.microstream.persistence.binary.types.Binary;
 
@@ -88,7 +86,7 @@ public class ComBinary
 	
 	
 	public static ByteBuffer readChunk(
-		final SocketChannel channel          ,
+		final ComConnection channel          ,
 		final ByteBuffer    defaultBuffer    ,
 		final boolean       switchedByteOrder
 	)
@@ -97,13 +95,15 @@ public class ComBinary
 		ByteBuffer filledHeaderBuffer;
 		ByteBuffer filledContentBuffer;
 		
-		// the known-length header is read into a buffer
-		filledHeaderBuffer = XSockets.readIntoBufferKnownLength(
-			channel,
-			defaultBuffer,
-			operationTimeout(),
-			ComBinary.chunkHeaderLength()
-		);
+//		// the known-length header is read into a buffer
+//		filledHeaderBuffer = XSockets.readIntoBufferKnownLength(
+//			channel,
+//			defaultBuffer,
+//			operationTimeout(),
+//			ComBinary.chunkHeaderLength()
+//		);
+		
+		filledHeaderBuffer = channel.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
 		
 		// the header starts with the content length (and currently, that is the whole header)
 		final long chunkContentLength = ComBinary.getChunkHeaderContentLength(
@@ -117,29 +117,34 @@ public class ComBinary
 		 */
 		
 		// the content after the header is read into a buffer since the header has already been siphoned off.
-		filledContentBuffer = XSockets.readIntoBufferKnownLength(
-			channel,
-			defaultBuffer,
-			operationTimeout(),
-			X.checkArrayRange(chunkContentLength)
-		);
+//		filledContentBuffer = XSockets.readIntoBufferKnownLength(
+//			channel,
+//			defaultBuffer,
+//			operationTimeout(),
+//			X.checkArrayRange(chunkContentLength)
+//		);
+		
+		filledContentBuffer = channel.read(defaultBuffer, operationTimeout(), X.checkArrayRange(chunkContentLength));
 		
 		return filledContentBuffer;
 	}
 	
 	public static void writeChunk(
-		final SocketChannel channel     ,
+		final ComConnection channel     ,
 		final ByteBuffer    headerBuffer,
 		final ByteBuffer[]  buffers
 	)
 		throws ComException, ComExceptionTimeout
 	{
 		// the chunk header (specifying the chunk data length) is sent first, then the actual chunk data.
-		XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
+		// XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
+		
+		channel.write(headerBuffer, operationTimeout());
 		
 		for(final ByteBuffer bb : buffers)
 		{
-			XSockets.writeFromBuffer(channel, bb, operationTimeout());
+			//XSockets.writeFromBuffer(channel, bb, operationTimeout());
+			channel.write(bb, operationTimeout());
 		}
 	}
 	

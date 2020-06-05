@@ -8,6 +8,8 @@ public interface ComConnection
 	public void close();
 	public void readCompletely(ByteBuffer buffer);
 	public void writeCompletely(ByteBuffer buffer);
+	public ByteBuffer read(ByteBuffer buffer, int timeout, int length);
+	public void write(ByteBuffer buffer, int timeout);
 	
 	public class Default implements ComConnection
 	{
@@ -36,7 +38,23 @@ public interface ComConnection
 		{
 			XSockets.writeCompletely(this.channel, buffer);
 		}
+
+		@Override
+		public ByteBuffer read(final ByteBuffer buffer, final int timeout, final int length)
+		{
+			return XSockets.readIntoBufferKnownLength(this.channel, buffer, timeout, length);
+		}
+
+		@Override
+		public void write(final ByteBuffer buffer, final int timeout)
+		{
+			XSockets.writeFromBuffer(this.channel, buffer, timeout);
+		}
 		
 	}
+
+	
+
+	
 
 }
