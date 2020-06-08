@@ -68,7 +68,8 @@ public class ComTLSConnection implements ComConnection
 	                /*
 	                 * TODO: WTF?
 	                 * 
-	                 * Having the block blow active, the handshake works.
+	                 * Having the block blow active, the handshake works. (sometimes, seems also depend on VM
+	                 * oracle jdk1.8.0_144 behaves different to jdk-11.0.3.7-hotspot)
 	                 * if not the engine does not consume all data received...
 	                 * 
 	                 * Maybe some timing isse. In some case the buffer contains more then one message.
@@ -76,8 +77,8 @@ public class ComTLSConnection implements ComConnection
 	                 * This may cause the next read to block because no more data is send..
 	                 * 
 	                 */
-	                final int bytesConsumed = res.bytesConsumed();
-	                XDebug.println("bytes consumed: " + bytesConsumed);
+//	                final int bytesConsumed = res.bytesConsumed();
+//	                XDebug.println("bytes consumed: " + bytesConsumed);
 //	                if(bytesConsumed != bytesRead)
 //	                {
 //	                	XDebug.println("read buffer not empty!");
