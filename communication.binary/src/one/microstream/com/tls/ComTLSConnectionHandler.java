@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComConnectionHandler;
@@ -151,6 +152,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		
 	private SSLEngine createSSLEngine(final boolean clientMode)
 	{
+		final SSLParameters defaults = this.context.getDefaultSSLParameters();
 		final SSLEngine engine = this.context.createSSLEngine();
 		engine.setUseClientMode(clientMode);
 		
