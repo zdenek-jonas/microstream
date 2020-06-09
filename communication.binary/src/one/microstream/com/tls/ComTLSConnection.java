@@ -6,6 +6,7 @@ import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLSession;
 
@@ -63,37 +64,30 @@ public class ComTLSConnection implements ComConnection
 	        		XDebug.println("bytes read: " + bytesRead);
 	        		
 	        		peerNetData.flip();
-	                SSLEngineResult res = engine.unwrap(peerNetData, peerAppData);
-
-	                /*
-	                 * TODO: WTF?
-	                 * 
-	                 * Having the block blow active, the handshake works. (sometimes, seems also depend on VM
-	                 * oracle jdk1.8.0_144 behaves different to jdk-11.0.3.7-hotspot)
-	                 * if not the engine does not consume all data received...
-	                 * 
-	                 * Maybe some timing isse. In some case the buffer contains more then one message.
-	                 * the sslengine does not consume both. Instead it requests a new unwrap.
-	                 * This may cause the next read to block because no more data is send..
-	                 * 
-	                 */
-//	                final int bytesConsumed = res.bytesConsumed();
-//	                XDebug.println("bytes consumed: " + bytesConsumed);
-//	                if(bytesConsumed != bytesRead)
-//	                {
-//	                	XDebug.println("read buffer not empty!");
-//	                }
-	                
-	                peerNetData.compact();
-	                hs = res.getHandshakeStatus();
-	                
-	                XDebug.println("Unwrap status: " + res.getStatus());
-	                
-	                if(res.getStatus() == Status.BUFFER_UNDERFLOW)
-	                {
-	                	XDebug.println("NEED_UNWRAP -> BUFFER_UNDERFLOW");
-	                }
-	                
+	        		
+	        		/*
+	        		 * in some cases the input buffer may contain more the one handshake message to be unwrapped
+	        		 * before the next read is done.
+	        		 */
+	        		SSLEngineResult res;
+	        		do
+	        		{
+	        			res = engine.unwrap(peerNetData, peerAppData);
+	        			hs = res.getHandshakeStatus();
+	        			
+	        			XDebug.println("Unwrap status: " + res.getStatus());
+	        			XDebug.println("Handshake status: " + hs);
+	 	               
+	 	               
+	        		}
+	        		while(hs == HandshakeStatus.NEED_UNWRAP &&
+	        			peerNetData.hasRemaining() &&
+	        			res.getStatus() == Status.OK);
+	        		
+	        		peerNetData.compact();
+	               
+	        		
+	        			    	                
 	        		
 	        		break;
 	        		
@@ -105,15 +99,12 @@ public class ComTLSConnection implements ComConnection
 					hs = res.getHandshakeStatus();
 												
 					XDebug.println("Wrap status: " + res.getStatus());
+					XDebug.println("Handshake status: " + hs);
 					
 					if(res.getStatus() == SSLEngineResult.Status.OK )
 					{
 						myNetData.flip();
 						this.channel.write(myNetData);
-//						while (myNetData.hasRemaining()) {
-//							this.channel.write(myNetData);
-//	                    }
-						
 					}
 	        		
 	        		break;
@@ -145,8 +136,7 @@ public class ComTLSConnection implements ComConnection
 					XDebug.println("case DEFAULT??");
 					break;
 	    	}
-	    	
-	    	
+	    		    	
 	    	XDebug.println("Handshake status: " + hs);
 	    }
 	}
