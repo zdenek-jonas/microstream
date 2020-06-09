@@ -85,10 +85,7 @@ public class ComTLSConnection implements ComConnection
 	        			res.getStatus() == Status.OK);
 	        		
 	        		peerNetData.compact();
-	               
-	        		
-	        			    	                
-	        		
+	               	        			        			    	                     		
 	        		break;
 	        		
 	        	case NEED_WRAP :
