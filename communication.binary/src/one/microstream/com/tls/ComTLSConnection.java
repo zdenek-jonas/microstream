@@ -14,6 +14,7 @@ import javax.net.ssl.SSLSession;
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
 import one.microstream.com.XSockets;
+import one.microstream.meta.NotImplementedYetError;
 import one.microstream.meta.XDebug;
 
 public class ComTLSConnection implements ComConnection
@@ -153,7 +154,7 @@ public class ComTLSConnection implements ComConnection
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		throw new NotImplementedYetError("TODO");
 		
 	}
 
@@ -222,13 +223,11 @@ public class ComTLSConnection implements ComConnection
 
 	@Override
 	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new NotImplementedYetError("TODO");
 	}
 
 	@Override
 	public void write(final ByteBuffer buffer, final int timeout) {
-		// TODO Auto-generated method stub
-		
+		throw new NotImplementedYetError("TODO");
 	}
 }
