@@ -11,6 +11,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
+import one.microstream.chars.XChars;
+import one.microstream.chars._charArrayRange;
+import one.microstream.com.Com;
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComConnectionHandler;
 import one.microstream.com.ComConnectionListener;
@@ -18,10 +21,17 @@ import one.microstream.com.ComException;
 import one.microstream.com.ComProtocol;
 import one.microstream.com.ComProtocolStringConverter;
 import one.microstream.com.XSockets;
+import one.microstream.memory.XMemory;
 import one.microstream.meta.XDebug;
 
-public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection> {
-
+public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection>
+{
+	///////////////////////////////////////////////////////////////////////////
+	// instance fields //
+	////////////////////
+	
+	private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
+	
 	private final static boolean SERVER_MODE = false;
 	private final static boolean CLIENT_MODE = true;
 	
@@ -30,6 +40,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 
 	private final TLSKeyManagerProvider   keyManagerProvider;
 	private final TLSTrustManagerProvider trustManagerProvider;
+	
 	
 	@Override
 	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address) {
@@ -84,32 +95,56 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	}
 
 	@Override
-	public void read(final ComConnection connection, final ByteBuffer buffer) {
+	public void read(final ComConnection connection, final ByteBuffer buffer)
+	{
 		XDebug.println("++");
-		// TODO Auto-generated method stub
+		connection.readCompletely(buffer);
 
 	}
 
 	@Override
-	public void write(final ComConnection connection, final ByteBuffer buffer) {
+	public void write(final ComConnection connection, final ByteBuffer buffer)
+	{
 		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+		connection.writeCompletely(buffer);
 	}
 
 	@Override
 	public void sendProtocol(final ComConnection connection, final ComProtocol protocol,
-			final ComProtocolStringConverter stringConverter) {
+			final ComProtocolStringConverter stringConverter)
+	{
 		XDebug.println("++");
-		// TODO Auto-generated method stub
+		
+		final ByteBuffer bufferedProtocol = Com.bufferProtocol(
+				protocol                     ,
+				stringConverter              ,
+				this.protocolLengthDigitCount
+			);
 
+		this.write(connection, bufferedProtocol);
 	}
 
 	@Override
-	public ComProtocol receiveProtocol(final ComConnection connection, final ComProtocolStringConverter stringConverter) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-		return null;
+	public ComProtocol receiveProtocol(final ComConnection connection, final ComProtocolStringConverter stringConverter)
+	{
+		final ByteBuffer lengthBuffer = XMemory.allocateDirectNative(this.protocolLengthDigitCount);
+		this.read(connection, lengthBuffer);
+		
+//		XDebug.printDirectByteBuffer(lengthBuffer);
+		
+		// buffer position must be reset for the decoder to see the bytes
+		lengthBuffer.position(0);
+		final String lengthDigits = XChars.standardCharset().decode(lengthBuffer).toString();
+		final int    length       = Integer.parseInt(lengthDigits);
+		
+		final ByteBuffer protocolBuffer = XMemory.allocateDirectNative(length - this.protocolLengthDigitCount);
+		this.read(connection, protocolBuffer);
+		
+		// buffer position must be reset to after the separator for the decoder to see the bytes
+		protocolBuffer.position(1);
+		final char[] protocolChars = XChars.standardCharset().decode(protocolBuffer).array();
+		
+		return stringConverter.parse(_charArrayRange.New(protocolChars));
 	}
 
 	public static ComConnectionHandler<ComConnection> New(final TLSKeyManagerProvider keyManagerProvider, final TLSTrustManagerProvider trustManagerProvider)
