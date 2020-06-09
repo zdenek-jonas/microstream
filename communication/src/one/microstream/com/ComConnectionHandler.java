@@ -61,7 +61,7 @@ public interface ComConnectionHandler<C>
 		// instance fields //
 		////////////////////
 		
-		final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
+		private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
 				
 		
 		
