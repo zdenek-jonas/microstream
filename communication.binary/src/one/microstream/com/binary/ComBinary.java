@@ -129,8 +129,7 @@ public class ComBinary
 //			operationTimeout(),
 //			X.checkArrayRange(chunkContentLength)
 //		);
-		
-		defaultBuffer.clear();
+				
 		filledContentBuffer = channel.read(defaultBuffer, operationTimeout(), X.checkArrayRange(chunkContentLength));
 		filledContentBuffer.flip();
 		

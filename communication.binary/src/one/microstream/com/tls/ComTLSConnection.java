@@ -1,6 +1,7 @@
 package one.microstream.com.tls;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -307,61 +308,87 @@ public class ComTLSConnection implements ComConnection
 	}
 	
 	@Override
-	public ByteBuffer read(final ByteBuffer outBuffer, final int timeout, final int length)
+	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
 	{
 		XDebug.println("++");
 		XDebug.println("Start read bytes: " + length);
-			
-		if(this.sslDecryptedBuffer.position() == 0)
+		
+		final ByteBuffer outBuffer;
+		
+		if(defaultBuffer.capacity() < length)
 		{
-			XDebug.println("read no allready decrypted data available, reading data ... ");
+			outBuffer = ByteBuffer.allocateDirect(length);
+		}
+		else
+		{
+			outBuffer = defaultBuffer;
+			outBuffer.clear();
+		}
+	
 			
-			if(this.sslDecryptBuffer.position() == 0)
+		while(outBuffer.position() < length)
+		{
+			if(this.sslDecryptedBuffer.position() == 0)
 			{
-				XDebug.println("calling readCompletely ... ");
-				this.sslDecryptBuffer.clear();
-				XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-				//this.sslDecryptBuffer.flip();
+				XDebug.println("read no allready decrypted data available, reading data ... ");
+				
+				if(this.sslDecryptBuffer.position() == 0)
+				{
+					XDebug.println("calling readCompletely ... ");
+					this.sslDecryptBuffer.clear();
+					XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+					//this.sslDecryptBuffer.flip();
+				}
+									
+				this.sslDecryptedBuffer.clear();
+				this.sslDecryptBuffer.flip();
+				
+				try
+				{
+					final SSLEngineResult result = this.sslEngine.unwrap(this.sslDecryptBuffer, this.sslDecryptedBuffer);
+												
+					if(result.getStatus() == Status.BUFFER_UNDERFLOW)
+					{
+						XDebug.println("BUFFER_UNDERFLOW");
+						throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
+					}
+					
+					this.sslDecryptedBuffer.flip();
+					XDebug.println("unwrap result  : " + result.getStatus());
+					XDebug.println("unwrap consumed: " + result.bytesConsumed());
+					XDebug.println("unwrap bytes produced: " + result.bytesProduced());
+					
+					this.sslDecryptBuffer.compact();
+					this.sslDecryptBuffer.limit(this.sslDecryptBuffer.position());
+					
+					XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+				}
+				catch (final SSLException e)
+				{
+					throw new ComException("failed to decypt buffer", e);
+				}
 			}
-								
-			this.sslDecryptedBuffer.clear();
-			this.sslDecryptBuffer.flip();
+					
+			final int numBytes = Math.min(length, this.sslDecryptedBuffer.limit());
 			
 			try
 			{
-				final SSLEngineResult result = this.sslEngine.unwrap(this.sslDecryptBuffer, this.sslDecryptedBuffer);
-											
-				if(result.getStatus() == Status.BUFFER_UNDERFLOW)
-				{
-					XDebug.println("BUFFER_UNDERFLOW");
-				}
-				
-				this.sslDecryptedBuffer.flip();
-				XDebug.println("unwrap result  : " + result.getStatus());
-				XDebug.println("unwrap consumed: " + result.bytesConsumed());
-				XDebug.println("unwrap bytes produced: " + result.bytesProduced());
-				
-				this.sslDecryptBuffer.compact();
-				this.sslDecryptBuffer.limit(this.sslDecryptBuffer.position());
-				
-				XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+				outBuffer.put(this.sslDecryptedBuffer.array(), 0, numBytes);
 			}
-			catch (final SSLException e)
+			catch(final IndexOutOfBoundsException | BufferOverflowException e)
 			{
-				throw new ComException("failed to decypt buffer", e);
+				throw new ComException("faild to copy to out buffer", e);
 			}
+			
+			final int newLimit = this.sslDecryptedBuffer.limit() - numBytes;
+			this.sslDecryptedBuffer.position(numBytes);
+			this.sslDecryptedBuffer.compact();
+			this.sslDecryptedBuffer.limit(newLimit);
+			
+			XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
+			
+			//XDebug.printDirectByteBuffer(outBuffer.duplicate().flip());
 		}
-		
-		outBuffer.put(this.sslDecryptedBuffer.array(), 0, length);
-		
-		final int newLimit = this.sslDecryptedBuffer.limit() - length;
-		this.sslDecryptedBuffer.position(length);
-		this.sslDecryptedBuffer.compact();
-		this.sslDecryptedBuffer.limit(newLimit);
-		
-		XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
-		
-		XDebug.printDirectByteBuffer(outBuffer.duplicate().flip());
 		
 		XDebug.println("--");
 		
