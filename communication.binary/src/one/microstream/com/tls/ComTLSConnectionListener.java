@@ -3,7 +3,7 @@ package one.microstream.com.tls;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLContext;
 
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComConnectionListener;
@@ -13,22 +13,22 @@ public class ComTLSConnectionListener implements ComConnectionListener<ComConnec
 {
 
 	private final ServerSocketChannel serverSocketChannel;
-	private final SSLEngine sslEngine;
+	private final SSLContext sslContext;
 
 	public ComTLSConnectionListener(
 		final ServerSocketChannel serverSocketChannel,
-		final SSLEngine sslEngine)
+		final SSLContext context)
 	{
 		super();
 		this.serverSocketChannel = serverSocketChannel;
-		this.sslEngine = sslEngine;
+		this.sslContext = context;
 	}
 
 	@Override
 	public ComTLSConnection listenForConnection()
 	{
 		final SocketChannel channel = XSockets.acceptSocketChannel(this.serverSocketChannel);
-		return new ComTLSConnection(channel, this.sslEngine);
+		return new ComTLSConnection(channel, this.sslContext, false);
 	}
 
 	@Override
@@ -36,5 +36,4 @@ public class ComTLSConnectionListener implements ComConnectionListener<ComConnec
 	{
 		XSockets.closeChannel(this.serverSocketChannel);
 	}
-
 }

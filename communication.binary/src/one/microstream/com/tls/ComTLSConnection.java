@@ -5,6 +5,7 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
@@ -28,17 +29,18 @@ public class ComTLSConnection implements ComConnection
 	private final ByteBuffer    sslDecryptedBuffer;
 	
 	
-	public ComTLSConnection(final SocketChannel channel, final SSLEngine sslEngine)
+	public ComTLSConnection(final SocketChannel channel, final SSLContext sslContext, final boolean clientMode)
 	{
 		XDebug.println("++");
 		// TODO Auto-generated constructor stub
 		
 		this.channel = channel;
-		this.sslEngine = sslEngine;
+		this.sslEngine = sslContext.createSSLEngine();
+		this.sslEngine.setUseClientMode(clientMode);
 				
-		this.sslEncyptBuffer    = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-		this.sslDecryptBuffer   = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
-		this.sslDecryptedBuffer = ByteBuffer.allocate(sslEngine.getSession().getPacketBufferSize());
+		this.sslEncyptBuffer    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslDecryptBuffer   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslDecryptedBuffer = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		
 		try
 		{
@@ -155,7 +157,37 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
+		//XSockets.closeChannel(this.channel);
+		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
+		SSLEngineResult result;
+		
+		this.sslEngine.closeOutbound();
+		
+		while(!this.sslEngine.isOutboundDone())
+		{
+			try
+			{
+				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptBuffer);
+			}
+			catch (final SSLException e)
+			{
+				throw new ComException("failed to encypt buffer", e);
+			}
+			
+			XDebug.println("Close wrap status: " + result.getStatus());
+			
+			if(result.getStatus() == Status.OK)
+			{
+				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+			}
+			
+			this.sslEncyptBuffer.compact();
+		}
+		
 		XSockets.closeChannel(this.channel);
+		
+		
+		
 	}
 
 //	@Override

@@ -8,8 +8,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLParameters;
 
 import one.microstream.chars.XChars;
 import one.microstream.chars._charArrayRange;
@@ -32,9 +30,8 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	
 	private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
 	
-	private final static boolean SERVER_MODE = false;
-	private final static boolean CLIENT_MODE = true;
-	
+	private final static boolean TLS_CLIENT_MODE = true;
+		
 	private final SSLContext context;
 	private final String tlsProtocol = "TLSv1.2";
 
@@ -47,7 +44,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		XDebug.println("++");
 		
 		final ServerSocketChannel serverSocketChannel = XSockets.openServerSocketChannel(address);
-		return new ComTLSConnectionListener(serverSocketChannel, this.createSSLEngine(SERVER_MODE));
+		return new ComTLSConnectionListener(serverSocketChannel, this.context);
 	}
 
 
@@ -56,7 +53,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		XDebug.println("++");
 		
 		final SocketChannel clientChannel = XSockets.openChannel(address);
-		return new ComTLSConnection(clientChannel, this.createSSLEngine(CLIENT_MODE));
+		return new ComTLSConnection(clientChannel, this.context, TLS_CLIENT_MODE);
 	}
 
 	@Override
@@ -183,14 +180,5 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 			throw new ComException("Failed to init SSLContext", e);
 		}
 		
-	}
-		
-	private SSLEngine createSSLEngine(final boolean clientMode)
-	{
-		final SSLParameters defaults = this.context.getDefaultSSLParameters();
-		final SSLEngine engine = this.context.createSSLEngine();
-		engine.setUseClientMode(clientMode);
-		
-		return engine;
 	}
 }
