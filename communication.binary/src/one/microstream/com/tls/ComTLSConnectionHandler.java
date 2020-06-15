@@ -37,14 +37,71 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 
 	private final TLSKeyManagerProvider   keyManagerProvider;
 	private final TLSTrustManagerProvider trustManagerProvider;
+	private final TLSParametersProvider   tlsParameterProvider;
+	private final SecureRandomProvider    randomProvider;
+
 	
+	///////////////////////////////////////////////////////////////////////////
+	// constructors //
+	/////////////////
+	
+	private ComTLSConnectionHandler(
+		final TLSKeyManagerProvider   keyManagerProvider,
+		final TLSTrustManagerProvider trustManagerProvider,
+		final TLSParametersProvider   tlsParameterProvider,
+		final SecureRandomProvider    randomProvider)
+	{
+		super();
+		XDebug.println("++");
+		
+		this.tlsParameterProvider = tlsParameterProvider;
+		this.keyManagerProvider   = keyManagerProvider;
+		this.trustManagerProvider = trustManagerProvider;
+		this.randomProvider       = randomProvider;
+				
+		try
+		{
+			this.context = SSLContext.getInstance("TLSv1.2");
+		}
+		catch (final NoSuchAlgorithmException e)
+		{
+			throw new ComException("Failed get SSLContextInstance for " + this.tlsProtocol, e);
+		}
+		
+		try
+		{
+			this.context.init(
+				this.keyManagerProvider.get(),
+				this.trustManagerProvider.get(),
+				this.randomProvider.get()
+			);
+		}
+		catch (final KeyManagementException e)
+		{
+			throw new ComException("Failed to init SSLContext", e);
+		}
+	}
+	
+	public static ComConnectionHandler<ComConnection> New(
+		final TLSKeyManagerProvider   keyManagerProvider,
+		final TLSTrustManagerProvider trustManagerProvider,
+		final TLSParametersProvider   tlsParameterProvider,
+		final SecureRandomProvider    randomProvider)
+	{
+		XDebug.println("++");
+		return new ComTLSConnectionHandler(keyManagerProvider, trustManagerProvider, tlsParameterProvider, randomProvider);
+	}
+	
+	///////////////////////////////////////////////////////////////////////////
+	// methods //
+	////////////
 	
 	@Override
 	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address) {
 		XDebug.println("++");
 		
 		final ServerSocketChannel serverSocketChannel = XSockets.openServerSocketChannel(address);
-		return new ComTLSConnectionListener(serverSocketChannel, this.context);
+		return new ComTLSConnectionListener(serverSocketChannel, this.context, this.tlsParameterProvider.getSSLParameters());
 	}
 
 
@@ -53,7 +110,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		XDebug.println("++");
 		
 		final SocketChannel clientChannel = XSockets.openChannel(address);
-		return new ComTLSConnection(clientChannel, this.context, TLS_CLIENT_MODE);
+		return new ComTLSConnection(clientChannel, this.context, this.tlsParameterProvider.getSSLParameters(), TLS_CLIENT_MODE);
 	}
 
 	@Override
@@ -126,9 +183,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	{
 		final ByteBuffer lengthBuffer = XMemory.allocateDirectNative(this.protocolLengthDigitCount);
 		this.read(connection, lengthBuffer);
-		
-//		XDebug.printDirectByteBuffer(lengthBuffer);
-		
+				
 		// buffer position must be reset for the decoder to see the bytes
 		lengthBuffer.position(0);
 		final String lengthDigits = XChars.standardCharset().decode(lengthBuffer).toString();
@@ -144,41 +199,5 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		return stringConverter.parse(_charArrayRange.New(protocolChars));
 	}
 
-	public static ComConnectionHandler<ComConnection> New(final TLSKeyManagerProvider keyManagerProvider, final TLSTrustManagerProvider trustManagerProvider)
-	{
-		XDebug.println("++");
-		return new ComTLSConnectionHandler(keyManagerProvider, trustManagerProvider);
-	}
-	
-	private ComTLSConnectionHandler(final TLSKeyManagerProvider keyManagerProvider, final TLSTrustManagerProvider trustManagerProvider)
-	{
-		super();
-		XDebug.println("++");
-		
-		this.keyManagerProvider   = keyManagerProvider;
-		this.trustManagerProvider = trustManagerProvider;
-				
-		try
-		{
-			this.context = SSLContext.getInstance("TLSv1.2");
-		}
-		catch (final NoSuchAlgorithmException e)
-		{
-			throw new ComException("Failed get SSLContextInstance for " + this.tlsProtocol, e);
-		}
-		
-		try
-		{
-			this.context.init(
-				this.keyManagerProvider.get(),
-				this.trustManagerProvider.get(),
-				null
-			);
-		}
-		catch (final KeyManagementException e)
-		{
-			throw new ComException("Failed to init SSLContext", e);
-		}
-		
-	}
+
 }

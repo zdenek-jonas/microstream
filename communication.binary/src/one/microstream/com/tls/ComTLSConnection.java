@@ -11,6 +11,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import one.microstream.com.ComConnection;
@@ -20,24 +21,34 @@ import one.microstream.meta.XDebug;
 
 public class ComTLSConnection implements ComConnection
 {
+	///////////////////////////////////////////////////////////////////////////
+	// instance fields //
+	////////////////////
+	
 	private final SocketChannel channel;
 	private final SSLEngine		sslEngine;
 
 	private final ByteBuffer    sslEncyptBuffer;
 	private final ByteBuffer    sslDecryptBuffer;
-		
 	private final ByteBuffer    sslDecryptedBuffer;
 	
 	
-	public ComTLSConnection(final SocketChannel channel, final SSLContext sslContext, final boolean clientMode)
+	///////////////////////////////////////////////////////////////////////////
+	// constructors //
+	/////////////////
+	
+	public ComTLSConnection(final SocketChannel channel,
+		final SSLContext sslContext,
+		final SSLParameters sslParameters,
+		final boolean clientMode)
 	{
 		XDebug.println("++");
-		// TODO Auto-generated constructor stub
 		
 		this.channel = channel;
 		this.sslEngine = sslContext.createSSLEngine();
 		this.sslEngine.setUseClientMode(clientMode);
-				
+		this.sslEngine.setSSLParameters(sslParameters);
+								
 		this.sslEncyptBuffer    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslDecryptBuffer   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslDecryptedBuffer = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
@@ -53,6 +64,11 @@ public class ComTLSConnection implements ComConnection
 		
 	}
 
+	
+	///////////////////////////////////////////////////////////////////////////
+	// methods //
+	////////////
+	
 	private void doHandshake() throws IOException
 	{
 			
