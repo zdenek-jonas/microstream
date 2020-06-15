@@ -286,19 +286,22 @@ public class ComTLSConnection implements ComConnection
 		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
 		XDebug.println("max Packet Size: " + maxPacketSize);
 		
-		try
+		while(buffer.remaining() > 0)
 		{
-			final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptBuffer);
-			XDebug.println("wrap result: " + result.getStatus());
-			this.sslEncyptBuffer.flip();
+			try
+			{
+				final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptBuffer);
+				XDebug.println("wrap result: " + result.getStatus());
+				this.sslEncyptBuffer.flip();
+			}
+			catch (final SSLException e)
+			{
+				throw new ComException("failed to encypt buffer", e);
+			}
+			
+			XSockets.writeFromBuffer(this.channel, this.sslEncyptBuffer, 1000);
+			this.sslEncyptBuffer.clear();
 		}
-		catch (final SSLException e)
-		{
-			throw new ComException("failed to encypt buffer", e);
-		}
-		
-		XSockets.writeFromBuffer(this.channel, this.sslEncyptBuffer, 1000);
-		this.sslEncyptBuffer.clear();
 	}
 	
 	@Override
@@ -335,9 +338,7 @@ public class ComTLSConnection implements ComConnection
 				if(this.sslDecryptBuffer.position() == 0)
 				{
 					XDebug.println("calling readCompletely ... ");
-					this.sslDecryptBuffer.clear();
 					XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-					//this.sslDecryptBuffer.flip();
 				}
 									
 				this.sslDecryptedBuffer.clear();
@@ -350,6 +351,16 @@ public class ComTLSConnection implements ComConnection
 					if(result.getStatus() == Status.BUFFER_UNDERFLOW)
 					{
 						XDebug.println("BUFFER_UNDERFLOW");
+						
+						if(this.sslDecryptBuffer.hasRemaining())
+						{
+							this.sslDecryptBuffer.position(this.sslDecryptBuffer.limit());
+							this.sslDecryptBuffer.limit(this.sslDecryptBuffer.capacity());
+							
+							XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+							continue;
+						}
+						
 						throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
 					}
 					
@@ -359,8 +370,6 @@ public class ComTLSConnection implements ComConnection
 					XDebug.println("unwrap bytes produced: " + result.bytesProduced());
 					
 					this.sslDecryptBuffer.compact();
-					this.sslDecryptBuffer.limit(this.sslDecryptBuffer.position());
-					
 					XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
 				}
 				catch (final SSLException e)
@@ -386,8 +395,6 @@ public class ComTLSConnection implements ComConnection
 			this.sslDecryptedBuffer.limit(newLimit);
 			
 			XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
-			
-			//XDebug.printDirectByteBuffer(outBuffer.duplicate().flip());
 		}
 		
 		XDebug.println("--");
