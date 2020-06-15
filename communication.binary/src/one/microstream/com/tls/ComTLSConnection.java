@@ -185,56 +185,7 @@ public class ComTLSConnection implements ComConnection
 		}
 		
 		XSockets.closeChannel(this.channel);
-		
-		
-		
 	}
-
-//	@Override
-//	public void readCompletely(final ByteBuffer outBuffer)
-//	{
-//		//TODO: handle requested data longer then the max ssl packet buffer
-//
-//		XDebug.println("++");
-//		XDebug.println("Start readCompletely bytes: " + outBuffer.limit());
-//
-//
-//		if(this.sslDecryptedBuffer.position() == 0)
-//		{
-//			XDebug.println("readCompletely no allready decrypted data available, reading data ... ");
-//
-//			XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-//			this.sslDecryptBuffer.flip();
-//
-//			try
-//			{
-//				final SSLEngineResult result = this.sslEngine.unwrap(this.sslDecryptBuffer, this.sslDecryptedBuffer);
-//				XDebug.println("unwrap result: " + result.getStatus());
-//			}
-//			catch (final SSLException e)
-//			{
-//				throw new ComException("failed to decypt buffer", e);
-//			}
-//		}
-//		else
-//		{
-//			XDebug.println("readCompletely allready decrypted data available ... ");
-//		}
-//
-//		final int limit = Math.min(outBuffer.capacity(), this.sslDecryptedBuffer.limit());
-//
-//		XDebug.println("copy to output: length: " + limit);
-//		XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer before copy");
-//
-//		outBuffer.put(this.sslDecryptedBuffer.array(), 0, limit);
-//		this.sslDecryptedBuffer.position(this.sslDecryptedBuffer.position() - limit);
-//		this.sslDecryptedBuffer.compact();
-//
-//		XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after copy");
-//		XDebug.println("reading bytes: " + outBuffer.limit() + " done");
-//		XDebug.printBufferStats(outBuffer, "outBuffer");
-//
-//	}
 
 	@Override
 	public void writeCompletely(final ByteBuffer buffer)
@@ -258,56 +209,8 @@ public class ComTLSConnection implements ComConnection
 		
 		XSockets.writeFromBuffer(this.channel, this.sslEncyptBuffer, 1000);
 		this.sslEncyptBuffer.clear();
-		
 	}
 
-//	@Override
-//	public ByteBuffer read(final ByteBuffer outBuffer, final int timeout, final int length)
-//	{
-//		//TODO: handle requested data longer then the max ssl packet buffer
-//
-//		XDebug.println("++");
-//		XDebug.println("Start read bytes: " + length);
-//		outBuffer.clear();
-//
-//		if(this.sslDecryptedBuffer.position() == 0)
-//		{
-//			XDebug.println("read no allready decrypted data available, reading data ... ");
-//
-//			XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-//			this.sslDecryptBuffer.flip();
-//
-//			try
-//			{
-//				final SSLEngineResult result = this.sslEngine.unwrap(this.sslDecryptBuffer, this.sslDecryptedBuffer);
-//				XDebug.println("unwrap result: " + result.getStatus());
-//			}
-//			catch (final SSLException e)
-//			{
-//				throw new ComException("failed to decypt buffer", e);
-//			}
-//		}
-//		else
-//		{
-//			XDebug.println("read allready decrypted data available ... ");
-//		}
-//
-//
-//		final int limit = Math.min(length, this.sslDecryptedBuffer.limit());
-//
-//		XDebug.println("copy to output: length: " + limit);
-//		XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer before copy");
-//
-//		outBuffer.put(this.sslDecryptedBuffer.array(), 0, limit);
-//		this.sslDecryptedBuffer.position(this.sslDecryptedBuffer.position() - limit);
-//		this.sslDecryptedBuffer.compact();
-//
-//		XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after copy");
-//		XDebug.println("reading bytes: " + outBuffer.limit() + " done");
-//		XDebug.printBufferStats(outBuffer, "outBuffer");
-//
-//		return outBuffer;
-//	}
 
 	@Override
 	public void write(final ByteBuffer buffer, final int timeout)

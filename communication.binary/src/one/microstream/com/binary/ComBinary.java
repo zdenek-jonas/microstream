@@ -96,14 +96,7 @@ public class ComBinary
 		ByteBuffer filledHeaderBuffer;
 		ByteBuffer filledContentBuffer;
 		
-//		// the known-length header is read into a buffer
-//		filledHeaderBuffer = XSockets.readIntoBufferKnownLength(
-//			channel,
-//			defaultBuffer,
-//			operationTimeout(),
-//			ComBinary.chunkHeaderLength()
-//		);
-		
+		// the known-length header is read into a buffer
 		XDebug.printBufferStats(defaultBuffer, "defaultBuffer");
 		filledHeaderBuffer = channel.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
 		XDebug.printBufferStats(filledHeaderBuffer, "filledHeaderBuffer");
@@ -123,17 +116,8 @@ public class ComBinary
 		 */
 		
 		// the content after the header is read into a buffer since the header has already been siphoned off.
-//		filledContentBuffer = XSockets.readIntoBufferKnownLength(
-//			channel,
-//			defaultBuffer,
-//			operationTimeout(),
-//			X.checkArrayRange(chunkContentLength)
-//		);
-				
 		filledContentBuffer = channel.read(defaultBuffer, operationTimeout(), X.checkArrayRange(chunkContentLength));
 		filledContentBuffer.flip();
-		
-		XDebug.printDirectByteBuffer(filledContentBuffer.duplicate());
 		
 		return filledContentBuffer;
 	}
