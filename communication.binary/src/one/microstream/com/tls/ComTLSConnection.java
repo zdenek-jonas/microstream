@@ -333,6 +333,10 @@ public class ComTLSConnection implements ComConnection
 							continue;
 						}
 						
+						/*
+						 * TODO: without this exception the code would work with non-blocking channels but
+						 * it may need some kind of sleep ...
+						 */
 						throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
 					}
 					
