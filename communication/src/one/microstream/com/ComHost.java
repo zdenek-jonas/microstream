@@ -151,7 +151,17 @@ public interface ComHost<C> extends Runnable
 		
 		private void synchAcceptConnection()
 		{
-			final C connection = this.liveConnectionListener.listenForConnection();
+			final C connection;
+			
+			try
+			{
+				connection = this.liveConnectionListener.listenForConnection();
+			}
+			catch(final ComException e)
+			{
+				return;
+			}
+			
 			this.connectionAcceptor.acceptConnection(connection, this);
 		}
 	}

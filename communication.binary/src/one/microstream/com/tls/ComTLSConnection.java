@@ -59,7 +59,7 @@ public class ComTLSConnection implements ComConnection
 		}
 		catch (final IOException e)
 		{
-			throw new ComException("TLS handshake failed" + e);
+			throw new ComException("TLS handshake failed ", e);
 		}
 		
 	}
@@ -238,7 +238,14 @@ public class ComTLSConnection implements ComConnection
 		
 		if(this.channel.isOpen())
 		{
-			XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+			try
+			{
+				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+			}
+			catch(final ComException e)
+			{
+				return;
+			}
 		}
 		
 		this.sslEngine.closeOutbound();
