@@ -19,9 +19,11 @@ public class MainTestComTLSClientDynamic
 		
 		final ComClient<?> client = ComBinaryDynamic.Foundation()
 			.setConnectionHandler(ComTLSConnectionHandler.New(
-				new TLSKeyManagerProvider.Default(),
+				new TLSKeyManagerProvider.PKCS12(
+					Paths.get("C:/Users/HaraldGrunwald/DevTSL/v2/client_key_store.pks"),
+					new char[] {'m','i','c','r','o','s','t','r','e','a','m'}),
 				new TLSTrustManagerProvider.PKCS12(
-					Paths.get("C:/Users/HaraldGrunwald/DevTSL/clientTrusts.pks"),
+					Paths.get("C:/Users/HaraldGrunwald/DevTSL/v2/client_trust_store.pks"),
 					new char[] {'m','i','c','r','o','s','t','r','e','a','m'}),
 				new TLSParametersProvider.Default(),
 				new SecureRandomProvider.Default()

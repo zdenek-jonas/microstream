@@ -69,6 +69,49 @@ public class ComTLSConnection implements ComConnection
 	// methods //
 	////////////
 	
+	
+	private HandshakeStatus needUnwrap(final ByteBuffer peerNetData, final ByteBuffer peerAppData) throws IOException
+	{
+		SSLEngineResult.HandshakeStatus hs = this.sslEngine.getHandshakeStatus();
+			 		
+		if(peerNetData.position() == 0)
+		{
+			final int bytesRead = this.channel.read(peerNetData);
+			XDebug.println("bytes read: " + bytesRead);
+		}
+		
+		peerNetData.flip();
+				
+		while(hs == HandshakeStatus.NEED_UNWRAP &&
+    		peerNetData.hasRemaining())
+ 		{
+	 		final SSLEngineResult engineResult = this.sslEngine.unwrap(peerNetData, peerAppData);
+	 		hs = engineResult.getHandshakeStatus();
+	 			 		
+	 		XDebug.println("Unwrap status: " + engineResult.getStatus() + " bytes consumed: " + engineResult.bytesConsumed());
+	 		XDebug.println("Handshake status: " + hs);
+	 			 			 		 			 		
+	 		final Status status = engineResult.getStatus();
+	 		
+	 		if(status != Status.OK)
+	 		{
+	 			if(status == Status.CLOSED || status == Status.BUFFER_OVERFLOW)
+	 			{
+	 				throw new ComException("TLS Handshake failed with engine status " + status);
+	 			}
+	 			
+	 			if(status == Status.BUFFER_UNDERFLOW)
+	 			{
+	 				this.channel.read(peerNetData);
+	 			}
+	 		}
+ 		}
+		
+		peerNetData.compact();
+ 		
+		return hs;
+	}
+	
 	private void doHandshake() throws IOException
 	{
 			
@@ -86,38 +129,16 @@ public class ComTLSConnection implements ComConnection
 	    {
 	    	XDebug.println("Handshake status: " + hs);
 	    	
-	    	switch (hs)
+	    	SSLEngineResult res;
+	    	
+			switch (hs)
 	    	{
 	        	case NEED_UNWRAP:
 	        		
 	        		XDebug.println("case NEED_UNWRAP");
 	        		
-	        		final int bytesRead = this.channel.read(peerNetData);
-	        		XDebug.println("bytes read: " + bytesRead);
-	        		
-	        		peerNetData.flip();
-	        		
-	        		/*
-	        		 * in some cases the input buffer may contain more the one handshake message to be unwrapped
-	        		 * before the next read is done.
-	        		 */
-	        		SSLEngineResult res;
-	        		do
-	        		{
-	        			res = this.sslEngine.unwrap(peerNetData, peerAppData);
-	        			hs = res.getHandshakeStatus();
-	        			
-	        			XDebug.println("Unwrap status: " + res.getStatus());
-	        			XDebug.println("Handshake status: " + hs);
-	 	               
-	 	               
-	        		}
-	        		while(hs == HandshakeStatus.NEED_UNWRAP &&
-	        			peerNetData.hasRemaining() &&
-	        			res.getStatus() == Status.OK);
-	        		
-	        		peerNetData.compact();
-	               	        			        			    	                     		
+	        		hs = this.needUnwrap(peerNetData, peerAppData);
+	        			               	        			        			    	                     		
 	        		break;
 	        		
 	        	case NEED_WRAP :

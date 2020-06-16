@@ -24,9 +24,11 @@ public class MainTestComTLSServerDynamic
 			.setHostByteOrder(ByteOrder.BIG_ENDIAN)
 			.setConnectionHandler(ComTLSConnectionHandler.New(
 					new TLSKeyManagerProvider.PKCS12(
-						Paths.get("C:/Users/HaraldGrunwald/DevTSL/host.pks"),
+						Paths.get("C:/Users/HaraldGrunwald/DevTSL/v2/server_key_store.pks"),
 						new char[] {'m','i','c','r','o','s','t','r','e','a','m'}),
-					new TLSTrustManagerProvider.Default(),
+					new TLSTrustManagerProvider.PKCS12(
+						Paths.get("C:/Users/HaraldGrunwald/DevTSL/v2/server_trust_store.pks"),
+						new char[] {'m','i','c','r','o','s','t','r','e','a','m'}),
 					new TLSParametersProvider.Default(),
 					new SecureRandomProvider.Default()
 				))
