@@ -8,7 +8,7 @@ public interface TLSParametersProvider
 	SSLParameters getSSLParameters();
 	
 	/**
-	 * provide the SSL protocol as defined in https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext
+	 * provide the SSL protocol as defined in {@link <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext">Standard Algorithm Name Documentation</a>}
 	 * 
 	 * @return SSL protocol
 	 */
