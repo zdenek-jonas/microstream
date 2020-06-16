@@ -114,38 +114,35 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	}
 
 	@Override
-	public void prepareReading(final ComConnection connection) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+	public void prepareReading(final ComConnection connection)
+	{
+		// no action required
 	}
 
 	@Override
-	public void prepareWriting(final ComConnection connection) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+	public void prepareWriting(final ComConnection connection)
+	{
+		// no action required
 	}
 
 	@Override
-	public void close(final ComConnection connection) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+	public void close(final ComConnection connection)
+	{
+		connection.close();
 	}
 
 	@Override
-	public void closeReading(final ComConnection connection) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+	public void closeReading(final ComConnection connection)
+	{
+		//closing read only not supported
+		connection.close();
 	}
 
 	@Override
-	public void closeWriting(final ComConnection connection) {
-		XDebug.println("++");
-		// TODO Auto-generated method stub
-
+	public void closeWriting(final ComConnection connection)
+	{
+		//closing write only not supported
+		connection.close();
 	}
 
 	@Override
