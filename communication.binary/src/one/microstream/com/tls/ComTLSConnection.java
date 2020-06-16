@@ -233,11 +233,14 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
-		//XSockets.closeChannel(this.channel);
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
 		
-		XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+		if(this.channel.isOpen())
+		{
+			XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+		}
+		
 		this.sslEngine.closeOutbound();
 		
 		while(!this.sslEngine.isOutboundDone())
