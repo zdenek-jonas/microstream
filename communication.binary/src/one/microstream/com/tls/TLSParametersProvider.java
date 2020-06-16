@@ -6,6 +6,13 @@ public interface TLSParametersProvider
 {
 
 	SSLParameters getSSLParameters();
+	
+	/**
+	 * provide the SSL protocol as defined in https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext
+	 * 
+	 * @return SSL protocol
+	 */
+	String getSSLProtocol();
 
 	/**
 	 * 
@@ -18,6 +25,8 @@ public interface TLSParametersProvider
 	 */
 	public final class Default implements TLSParametersProvider
 	{
+		private final String tlsProtocol = "TLSv1.2";
+		
 		@Override
 		public SSLParameters getSSLParameters()
 		{
@@ -26,6 +35,14 @@ public interface TLSParametersProvider
 						
 			return sslParameters;
 		}
+
+		@Override
+		public String getSSLProtocol()
+		{
+			return this.tlsProtocol;
+		}
 		
 	}
+
+
 }

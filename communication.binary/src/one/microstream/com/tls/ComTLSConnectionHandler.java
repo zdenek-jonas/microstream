@@ -33,8 +33,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	private final static boolean TLS_CLIENT_MODE = true;
 		
 	private final SSLContext context;
-	private final String tlsProtocol = "TLSv1.2";
-
+	
 	private final TLSKeyManagerProvider   keyManagerProvider;
 	private final TLSTrustManagerProvider trustManagerProvider;
 	private final TLSParametersProvider   tlsParameterProvider;
@@ -61,11 +60,11 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 				
 		try
 		{
-			this.context = SSLContext.getInstance("TLSv1.2");
+			this.context = SSLContext.getInstance(tlsParameterProvider.getSSLProtocol());
 		}
 		catch (final NoSuchAlgorithmException e)
 		{
-			throw new ComException("Failed get SSLContextInstance for " + this.tlsProtocol, e);
+			throw new ComException("Failed get SSLContextInstance for " + tlsParameterProvider.getSSLProtocol(), e);
 		}
 		
 		try
