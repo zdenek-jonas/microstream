@@ -70,14 +70,53 @@ public class ComTLSConnection implements ComConnection
 	////////////
 	
 	
+	
+	private synchronized void read(final SocketChannel channel, final ByteBuffer buffer, final int timeout)
+	{
+		final Thread t = new Thread()
+		{
+			@Override
+			public void run()
+			{
+				try
+				{
+					channel.read(buffer);
+				}
+				catch (final IOException e)
+				{
+					throw new ComException("error while reading from channel", e);
+				}
+			}
+		};
+	
+		t.start();
+		
+		try
+		{
+			t.join(timeout);
+		}
+		catch (final InterruptedException e)
+		{
+			throw new ComException("error while reading from channel", e);
+		}
+		
+		if(t.isAlive())
+		{
+			t.interrupt();
+			throw new ComException("read operation timeout");
+		}
+	}
+	
 	private HandshakeStatus needUnwrap(final ByteBuffer peerNetData, final ByteBuffer peerAppData) throws IOException
 	{
 		SSLEngineResult.HandshakeStatus hs = this.sslEngine.getHandshakeStatus();
 			 		
 		if(peerNetData.position() == 0)
 		{
-			final int bytesRead = this.channel.read(peerNetData);
-			XDebug.println("bytes read: " + bytesRead);
+			//final int bytesRead = this.channel.read(peerNetData);
+			//XDebug.println("bytes read: " + bytesRead);
+			this.read(this.channel, peerNetData, 1000);
+			
 		}
 		
 		peerNetData.flip();
@@ -102,7 +141,7 @@ public class ComTLSConnection implements ComConnection
 	 			
 	 			if(status == Status.BUFFER_UNDERFLOW)
 	 			{
-	 				this.channel.read(peerNetData);
+	 				this.read(this.channel, peerNetData, 1000);
 	 			}
 	 		}
  		}
@@ -198,6 +237,7 @@ public class ComTLSConnection implements ComConnection
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
 		
+		XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
 		this.sslEngine.closeOutbound();
 		
 		while(!this.sslEngine.isOutboundDone())
