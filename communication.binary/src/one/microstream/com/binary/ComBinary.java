@@ -97,9 +97,9 @@ public class ComBinary
 		ByteBuffer filledContentBuffer;
 		
 		// the known-length header is read into a buffer
-		XDebug.printBufferStats(defaultBuffer, "defaultBuffer");
+		//XDebug.printBufferStats(defaultBuffer, "defaultBuffer");
 		filledHeaderBuffer = channel.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
-		XDebug.printBufferStats(filledHeaderBuffer, "filledHeaderBuffer");
+		//XDebug.printBufferStats(filledHeaderBuffer, "filledHeaderBuffer");
 				
 		
 		// the header starts with the content length (and currently, that is the whole header)
