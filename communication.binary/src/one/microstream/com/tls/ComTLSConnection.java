@@ -70,7 +70,6 @@ public class ComTLSConnection implements ComConnection
 	////////////
 	
 	
-	
 	private synchronized void read(final SocketChannel channel, final ByteBuffer buffer, final int timeout)
 	{
 		final Thread t = new Thread()
@@ -107,7 +106,7 @@ public class ComTLSConnection implements ComConnection
 		}
 	}
 	
-	private HandshakeStatus needUnwrap(final ByteBuffer peerNetData, final ByteBuffer peerAppData) throws IOException
+	private HandshakeStatus unwrapHandshakeData(final ByteBuffer peerNetData, final ByteBuffer peerAppData) throws IOException
 	{
 		SSLEngineResult.HandshakeStatus hs = this.sslEngine.getHandshakeStatus();
 			 		
@@ -151,12 +150,50 @@ public class ComTLSConnection implements ComConnection
 		return hs;
 	}
 	
+	private HandshakeStatus wrapHandshakeData(final ByteBuffer appData, final ByteBuffer netData) throws IOException
+	{
+		netData.clear();
+		final SSLEngineResult engineResult = this.sslEngine.wrap(appData, netData);
+		final SSLEngineResult.HandshakeStatus hs = engineResult.getHandshakeStatus();
+									
+		XDebug.println("Wrap status: " + engineResult.getStatus());
+		XDebug.println("Handshake status: " + hs);
+		
+		if(engineResult.getStatus() == SSLEngineResult.Status.OK )
+		{
+			netData.flip();
+			this.channel.write(netData);
+		}
+		
+		return hs;
+	}
+	
+	private HandshakeStatus executeHandshakeTask()
+	{
+		final Runnable task = this.sslEngine.getDelegatedTask();
+		if(task != null)
+		{
+			final Thread engineTask = new Thread(task);
+			engineTask.start();
+			try
+			{
+				engineTask.join();
+			}
+			catch (final InterruptedException e)
+			{
+				throw new ComException("Error in SSLEngine handshake task ", e);
+			}
+		}
+		
+		return this.sslEngine.getHandshakeStatus();
+	}
+	
 	private void doHandshake() throws IOException
 	{
 			
 		final SSLSession session = this.sslEngine.getSession();
-		final ByteBuffer myAppData = ByteBuffer.allocate(session.getApplicationBufferSize());
-		final ByteBuffer myNetData = ByteBuffer.allocate(session.getPacketBufferSize());
+		final ByteBuffer appData = ByteBuffer.allocate(session.getApplicationBufferSize());
+		final ByteBuffer netData = ByteBuffer.allocate(session.getPacketBufferSize());
 		final ByteBuffer peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize());
 		final ByteBuffer peerNetData = ByteBuffer.allocate(session.getPacketBufferSize());
 		
@@ -167,63 +204,36 @@ public class ComTLSConnection implements ComConnection
 	            hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
 	    {
 	    	XDebug.println("Handshake status: " + hs);
-	    	
-	    	SSLEngineResult res;
-	    	
+	    		    	    	
 			switch (hs)
 	    	{
 	        	case NEED_UNWRAP:
 	        		
 	        		XDebug.println("case NEED_UNWRAP");
 	        		
-	        		hs = this.needUnwrap(peerNetData, peerAppData);
+	        		hs = this.unwrapHandshakeData(peerNetData, peerAppData);
 	        			               	        			        			    	                     		
 	        		break;
 	        		
 	        	case NEED_WRAP :
 	        		
 	        		XDebug.println("case NEED_WRAP");
-					myNetData.clear();
-					res = this.sslEngine.wrap(myAppData, myNetData);
-					hs = res.getHandshakeStatus();
-												
-					XDebug.println("Wrap status: " + res.getStatus());
-					XDebug.println("Handshake status: " + hs);
-					
-					if(res.getStatus() == SSLEngineResult.Status.OK )
-					{
-						myNetData.flip();
-						this.channel.write(myNetData);
-					}
 	        		
+	        		hs = this.wrapHandshakeData(appData, netData);
+						        		
 	        		break;
 	        		
 	        	case NEED_TASK :
+	        		
 	        		XDebug.println("case NEED_TASK");
-	        		
-	        		final Runnable task = this.sslEngine.getDelegatedTask();
-	        		if(task != null)
-	        		{
-	        			final Thread engineTask = new Thread(task);
-	        			engineTask.start();
-	        			try
-	        			{
-							engineTask.join();
-						}
-	        			catch (final InterruptedException e)
-	        			{
-	        				throw new ComException("Error in SSLEngine handshake task ", e);
-						}
-	        		}
-	        		
-	        		hs = this.sslEngine.getHandshakeStatus();
-	        		XDebug.println("Handshake status: " + hs);
-	        		
+	        			        		
+	        		hs = this.executeHandshakeTask();
+	        			        		
 	        		break;
 	        		
 				default:
-					XDebug.println("case DEFAULT??");
-					break;
+					//should never happen but if so throw an exception to avoid unknown behavior during the SSL handshake
+					throw new ComException("Unexpected handshake status: " + hs );
 	    	}
 	    		    	
 	    	XDebug.println("Handshake status: " + hs);
@@ -233,10 +243,11 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
+		//this zero sized buffer is needed for the SSLEngine to create the closing messages
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
 		
-		if(this.channel.isOpen())
+		if(this.channel.isOpen() && this.sslEncyptBuffer.hasRemaining())
 		{
 			try
 			{
