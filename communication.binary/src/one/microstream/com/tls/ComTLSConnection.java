@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -29,6 +34,7 @@ public class ComTLSConnection implements ComConnection
 	 * Delay in case of an SSL unwrap buffer underflow in ms
 	 */
 	private static final int SSL_BUFFER_UNDERFLOW_RETRY_DELAY = 10;
+	private static final int SSL_HANDSHAKE_READ_TIMEOUT       = 1000;
 	
 	
 	private final SocketChannel channel;
@@ -89,37 +95,28 @@ public class ComTLSConnection implements ComConnection
 	
 	private synchronized void read(final SocketChannel channel, final ByteBuffer buffer, final int timeout)
 	{
-		final Thread t = new Thread()
-		{
-			@Override
-			public void run()
-			{
-				try
-				{
-					channel.read(buffer);
-				}
-				catch (final IOException e)
-				{
-					throw new ComException("error while reading from channel", e);
-				}
-			}
-		};
-	
-		t.start();
+		final ExecutorService executor = Executors.newSingleThreadExecutor();
+				
+		int readResult = 0;
 		
 		try
 		{
-			t.join(timeout);
+			readResult = executor
+				.submit(() -> { return channel.read(buffer); })
+				.get(SSL_HANDSHAKE_READ_TIMEOUT, TimeUnit.MILLISECONDS);
 		}
-		catch (final InterruptedException e)
+		catch (InterruptedException | ExecutionException | TimeoutException e)
 		{
-			throw new ComException("error while reading from channel", e);
+			throw new ComException("reading data during hanshake failed", e);
 		}
-		
-		if(t.isAlive())
+		finally
 		{
-			t.interrupt();
-			throw new ComException("read operation timeout");
+			executor.shutdown();
+		}
+
+		if(readResult < 0)
+		{
+			throw new ComException("reading data during handshake failed");
 		}
 	}
 	
