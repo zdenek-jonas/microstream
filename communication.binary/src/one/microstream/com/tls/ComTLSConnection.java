@@ -50,6 +50,17 @@ public class ComTLSConnection implements ComConnection
 	{
 		XDebug.println("++");
 		
+		try
+		{
+			XDebug.println("local address:  " + channel.getLocalAddress());
+			XDebug.println("remote address: " + channel.getRemoteAddress());
+		}
+		catch (final IOException e)
+		{
+			throw new ComException("Failed to get connection info", e);
+		}
+		
+		
 		this.channel = channel;
 		this.sslEngine = sslContext.createSSLEngine();
 		this.sslEngine.setUseClientMode(clientMode);
