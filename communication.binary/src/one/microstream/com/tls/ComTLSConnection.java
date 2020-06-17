@@ -25,6 +25,12 @@ public class ComTLSConnection implements ComConnection
 	// instance fields //
 	////////////////////
 	
+	/**
+	 * Delay in case of an SSL unwrap buffer underflow in ms
+	 */
+	private static final int SSL_BUFFER_UNDERFLOW_RETRY_DELAY = 10;
+	
+	
 	private final SocketChannel channel;
 	private final SSLEngine		sslEngine;
 
@@ -376,15 +382,10 @@ public class ComTLSConnection implements ComConnection
 							continue;
 						}
 						
-						/*
-						 * TODO: without this exception the code would work with non-blocking channels but
-						 * it may need some kind of sleep ...
-						 */
-						//throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
+						//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
 						try
 						{
-							XDebug.println("SSSLEEEEEPING");
-							Thread.sleep(10);
+							Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
 						}
 						catch (final InterruptedException e)
 						{
