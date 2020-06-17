@@ -380,7 +380,16 @@ public class ComTLSConnection implements ComConnection
 						 * TODO: without this exception the code would work with non-blocking channels but
 						 * it may need some kind of sleep ...
 						 */
-						throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
+						//throw new ComException("SSL Engine decrypt BUFFER_UNDERFLOW");
+						try
+						{
+							XDebug.println("SSSLEEEEEPING");
+							Thread.sleep(10);
+						}
+						catch (final InterruptedException e)
+						{
+							throw new ComException(e);
+						}
 					}
 					
 					this.sslDecryptedBuffer.flip();
@@ -389,7 +398,7 @@ public class ComTLSConnection implements ComConnection
 					XDebug.println("unwrap bytes produced: " + result.bytesProduced());
 					
 					this.sslDecryptBuffer.compact();
-					XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+					//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
 				}
 				catch (final SSLException e)
 				{
@@ -413,7 +422,7 @@ public class ComTLSConnection implements ComConnection
 			this.sslDecryptedBuffer.compact();
 			this.sslDecryptedBuffer.limit(newLimit);
 			
-			XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
+			//XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
 		}
 		
 		XDebug.println("--");

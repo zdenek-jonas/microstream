@@ -132,13 +132,13 @@ public class ComBinary
 		// the chunk header (specifying the chunk data length) is sent first, then the actual chunk data.
 		// XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
 		
-		XDebug.printBufferStats(headerBuffer, "writing header buffer");
+		//XDebug.printBufferStats(headerBuffer, "writing header buffer");
 		channel.write(headerBuffer, operationTimeout());
 		
 		for(final ByteBuffer bb : buffers)
 		{
 			//XSockets.writeFromBuffer(channel, bb, operationTimeout());
-			XDebug.printBufferStats(bb, "writing content bb buffer");
+			//XDebug.printBufferStats(bb, "writing content bb buffer");
 			channel.write(bb, operationTimeout());
 		}
 	}
