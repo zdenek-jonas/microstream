@@ -288,25 +288,7 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void writeCompletely(final ByteBuffer buffer)
 	{
-		XDebug.println("++");
-		XDebug.println("Start writing bytes: " + buffer.limit());
-		
-		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
-		XDebug.println("max Packet Size: " + maxPacketSize);
-		
-		try
-		{
-			final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptBuffer);
-			XDebug.println("wrap result: " + result.getStatus());
-			this.sslEncyptBuffer.flip();
-		}
-		catch (final SSLException e)
-		{
-			throw new ComException("failed to encypt buffer", e);
-		}
-		
-		XSockets.writeFromBuffer(this.channel, this.sslEncyptBuffer, 1000);
-		this.sslEncyptBuffer.clear();
+		this.write(buffer, 0);
 	}
 
 
@@ -332,7 +314,7 @@ public class ComTLSConnection implements ComConnection
 				throw new ComException("failed to encypt buffer", e);
 			}
 			
-			XSockets.writeFromBuffer(this.channel, this.sslEncyptBuffer, 1000);
+			XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
 			this.sslEncyptBuffer.clear();
 		}
 	}
