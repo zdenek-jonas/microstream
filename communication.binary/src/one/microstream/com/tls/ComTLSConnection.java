@@ -264,20 +264,7 @@ public class ComTLSConnection implements ComConnection
 		//this zero sized buffer is needed for the SSLEngine to create the closing messages
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
-		
-//		if(this.channel.isOpen() && this.sslEncyptBuffer.hasRemaining())
-//		{
-//			XDebug.println("Channel is open, try to write remaining bytes");
-//			try
-//			{
-//				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
-//			}
-//			catch(final ComException e)
-//			{
-//				return;
-//			}
-//		}
-		
+				
 		this.sslEngine.closeOutbound();
 		
 		while(!this.sslEngine.isOutboundDone())
@@ -301,6 +288,7 @@ public class ComTLSConnection implements ComConnection
 			this.sslEncyptedOut.compact();
 		}
 		
+		XDebug.println("Closing channel");
 		XSockets.closeChannel(this.channel);
 	}
 
@@ -316,6 +304,11 @@ public class ComTLSConnection implements ComConnection
 	{
 		XDebug.println("++");
 		XDebug.println("Start writing bytes: " + buffer.limit());
+		
+		if(!this.channel.isOpen())
+		{
+			throw new ComException("Can not write to closed channel!");
+		}
 		
 		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
 		XDebug.println("max Packet Size: " + maxPacketSize);
@@ -349,6 +342,11 @@ public class ComTLSConnection implements ComConnection
 	{
 		XDebug.println("++");
 		XDebug.println("Start read bytes: " + length);
+		
+		if(!this.channel.isOpen())
+		{
+			throw new ComException("Can not read from closed channel!");
+		}
 		
 		final ByteBuffer outBuffer;
 		
