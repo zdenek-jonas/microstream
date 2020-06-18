@@ -111,7 +111,7 @@ public class ComTLSConnection implements ComConnection
 		}
 		finally
 		{
-			executor.shutdown();
+			executor.shutdownNow();
 		}
 
 		if(readResult < 0)
@@ -244,7 +244,7 @@ public class ComTLSConnection implements ComConnection
 	        		hs = this.executeHandshakeTask();
 	        			        		
 	        		break;
-	        		
+                	        		
 				default:
 					//should never happen but if so throw an exception to avoid unknown behavior during the SSL handshake
 					throw new ComException("Unexpected handshake status: " + hs );
@@ -257,21 +257,23 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
+		XDebug.println("++");
 		//this zero sized buffer is needed for the SSLEngine to create the closing messages
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
 		
-		if(this.channel.isOpen() && this.sslEncyptBuffer.hasRemaining())
-		{
-			try
-			{
-				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
-			}
-			catch(final ComException e)
-			{
-				return;
-			}
-		}
+//		if(this.channel.isOpen() && this.sslEncyptBuffer.hasRemaining())
+//		{
+//			XDebug.println("Channel is open, try to write remaining bytes");
+//			try
+//			{
+//				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+//			}
+//			catch(final ComException e)
+//			{
+//				return;
+//			}
+//		}
 		
 		this.sslEngine.closeOutbound();
 		
@@ -367,7 +369,10 @@ public class ComTLSConnection implements ComConnection
 				if(this.sslDecryptBuffer.position() == 0)
 				{
 					XDebug.println("calling readCompletely ... ");
-					XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+					//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+					
+					this.readInternal(this.channel, this.sslDecryptBuffer);
+					
 				}
 									
 				this.sslDecryptedBuffer.clear();
@@ -386,7 +391,8 @@ public class ComTLSConnection implements ComConnection
 							this.sslDecryptBuffer.position(this.sslDecryptBuffer.limit());
 							this.sslDecryptBuffer.limit(this.sslDecryptBuffer.capacity());
 							
-							XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+							//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+							this.readInternal(this.channel, this.sslDecryptBuffer);
 							continue;
 						}
 						
@@ -438,5 +444,25 @@ public class ComTLSConnection implements ComConnection
 		
 		return outBuffer;
 		
+	}
+
+
+	private void readInternal(final SocketChannel channel, final ByteBuffer buffer)
+	{
+		final int bytesRead;
+		
+		try
+		{
+			bytesRead = channel.read(buffer);
+		}
+		catch (final IOException e)
+		{
+			throw new ComException("failed reading from channel", e);
+		}
+		
+		if(bytesRead < 0)
+		{
+			throw new ComException("reached end of stream unexpected");
+		}
 	}
 }
