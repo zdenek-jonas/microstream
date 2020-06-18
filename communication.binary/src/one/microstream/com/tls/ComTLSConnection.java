@@ -40,9 +40,9 @@ public class ComTLSConnection implements ComConnection
 	private final SocketChannel channel;
 	private final SSLEngine		sslEngine;
 
-	private final ByteBuffer    sslEncyptBuffer;
-	private final ByteBuffer    sslDecryptBuffer;
-	private final ByteBuffer    sslDecryptedBuffer;
+	private final ByteBuffer    sslEncyptedOut;
+	private final ByteBuffer    sslEnryptedIn;
+	private final ByteBuffer    sslDecrypted;
 	
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -72,9 +72,9 @@ public class ComTLSConnection implements ComConnection
 		this.sslEngine.setUseClientMode(clientMode);
 		this.sslEngine.setSSLParameters(sslParameters);
 								
-		this.sslEncyptBuffer    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
-		this.sslDecryptBuffer   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
-		this.sslDecryptedBuffer = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslEnryptedIn    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslEncyptedOut   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslDecrypted     = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		
 		try
 		{
@@ -177,6 +177,7 @@ public class ComTLSConnection implements ComConnection
 		{
 			netData.flip();
 			this.channel.write(netData);
+			netData.compact();
 		}
 		
 		return hs;
@@ -206,10 +207,7 @@ public class ComTLSConnection implements ComConnection
 	{
 			
 		final SSLSession session = this.sslEngine.getSession();
-		final ByteBuffer appData = ByteBuffer.allocate(session.getApplicationBufferSize());
-		final ByteBuffer netData = ByteBuffer.allocate(session.getPacketBufferSize());
-		final ByteBuffer peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize());
-		final ByteBuffer peerNetData = ByteBuffer.allocate(session.getPacketBufferSize());
+		final ByteBuffer handshakeData = ByteBuffer.allocate(session.getApplicationBufferSize());
 		
 		this.sslEngine.beginHandshake();
 	    SSLEngineResult.HandshakeStatus hs = this.sslEngine.getHandshakeStatus();
@@ -225,7 +223,7 @@ public class ComTLSConnection implements ComConnection
 	        		
 	        		XDebug.println("case NEED_UNWRAP");
 	        		
-	        		hs = this.unwrapHandshakeData(peerNetData, peerAppData);
+	        		hs = this.unwrapHandshakeData(this.sslEnryptedIn, this.sslDecrypted);
 	        			               	        			        			    	                     		
 	        		break;
 	        		
@@ -233,7 +231,7 @@ public class ComTLSConnection implements ComConnection
 	        		
 	        		XDebug.println("case NEED_WRAP");
 	        		
-	        		hs = this.wrapHandshakeData(appData, netData);
+	        		hs = this.wrapHandshakeData(handshakeData, this.sslEncyptedOut);
 						        		
 	        		break;
 	        		
@@ -252,6 +250,11 @@ public class ComTLSConnection implements ComConnection
 	    		    	
 	    	XDebug.println("Handshake status: " + hs);
 	    }
+	    
+//    	XDebug.println("appData:     " + appData.remaining()     + " " + appData.position()     + " " + appData.limit() );
+//    	XDebug.println("netData:     " + netData.remaining()     + " " + netData.position()     + " " + netData.limit() );
+//    	XDebug.println("peerAppData: " + peerAppData.remaining() + " " + peerAppData.position() + " " + peerAppData.limit() );
+//    	XDebug.println("peerNetData: " + peerNetData.remaining() + " " + peerNetData.position() + " " + peerNetData.limit() );
 	}
 
 	@Override
@@ -281,7 +284,7 @@ public class ComTLSConnection implements ComConnection
 		{
 			try
 			{
-				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptBuffer);
+				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptedOut);
 			}
 			catch (final SSLException e)
 			{
@@ -292,10 +295,10 @@ public class ComTLSConnection implements ComConnection
 			
 			if(result.getStatus() == Status.OK)
 			{
-				XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
+				XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
 			}
 			
-			this.sslEncyptBuffer.compact();
+			this.sslEncyptedOut.compact();
 		}
 		
 		XSockets.closeChannel(this.channel);
@@ -321,17 +324,17 @@ public class ComTLSConnection implements ComConnection
 		{
 			try
 			{
-				final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptBuffer);
+				final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptedOut);
 				XDebug.println("wrap result: " + result.getStatus());
-				this.sslEncyptBuffer.flip();
+				this.sslEncyptedOut.flip();
 			}
 			catch (final SSLException e)
 			{
 				throw new ComException("failed to encypt buffer", e);
 			}
 			
-			XSockets.writeCompletely(this.channel, this.sslEncyptBuffer);
-			this.sslEncyptBuffer.clear();
+			XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
+			this.sslEncyptedOut.clear();
 		}
 	}
 	
@@ -362,37 +365,37 @@ public class ComTLSConnection implements ComConnection
 			
 		while(outBuffer.position() < length)
 		{
-			if(this.sslDecryptedBuffer.position() == 0)
+			if(this.sslDecrypted.position() == 0)
 			{
 				XDebug.println("read no allready decrypted data available, reading data ... ");
 				
-				if(this.sslDecryptBuffer.position() == 0)
+				if(this.sslEnryptedIn.position() == 0)
 				{
 					XDebug.println("calling readCompletely ... ");
 					//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
 					
-					this.readInternal(this.channel, this.sslDecryptBuffer);
+					this.readInternal(this.channel, this.sslEnryptedIn);
 					
 				}
 									
-				this.sslDecryptedBuffer.clear();
-				this.sslDecryptBuffer.flip();
+				this.sslDecrypted.clear();
+				this.sslEnryptedIn.flip();
 				
 				try
 				{
-					final SSLEngineResult result = this.sslEngine.unwrap(this.sslDecryptBuffer, this.sslDecryptedBuffer);
+					final SSLEngineResult result = this.sslEngine.unwrap(this.sslEnryptedIn, this.sslDecrypted);
 												
 					if(result.getStatus() == Status.BUFFER_UNDERFLOW)
 					{
 						XDebug.println("BUFFER_UNDERFLOW");
 						
-						if(this.sslDecryptBuffer.hasRemaining())
+						if(this.sslEnryptedIn.hasRemaining())
 						{
-							this.sslDecryptBuffer.position(this.sslDecryptBuffer.limit());
-							this.sslDecryptBuffer.limit(this.sslDecryptBuffer.capacity());
+							this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
+							this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
 							
 							//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-							this.readInternal(this.channel, this.sslDecryptBuffer);
+							this.readInternal(this.channel, this.sslEnryptedIn);
 							continue;
 						}
 						
@@ -407,12 +410,12 @@ public class ComTLSConnection implements ComConnection
 						}
 					}
 					
-					this.sslDecryptedBuffer.flip();
+					this.sslDecrypted.flip();
 					XDebug.println("unwrap result  : " + result.getStatus());
 					XDebug.println("unwrap consumed: " + result.bytesConsumed());
 					XDebug.println("unwrap bytes produced: " + result.bytesProduced());
 					
-					this.sslDecryptBuffer.compact();
+					this.sslEnryptedIn.compact();
 					//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
 				}
 				catch (final SSLException e)
@@ -421,21 +424,21 @@ public class ComTLSConnection implements ComConnection
 				}
 			}
 					
-			final int numBytes = Math.min(length, this.sslDecryptedBuffer.limit());
+			final int numBytes = Math.min(length, this.sslDecrypted.limit());
 			
 			try
 			{
-				outBuffer.put(this.sslDecryptedBuffer.array(), 0, numBytes);
+				outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
 			}
 			catch(final IndexOutOfBoundsException | BufferOverflowException e)
 			{
 				throw new ComException("faild to copy to out buffer", e);
 			}
 			
-			final int newLimit = this.sslDecryptedBuffer.limit() - numBytes;
-			this.sslDecryptedBuffer.position(numBytes);
-			this.sslDecryptedBuffer.compact();
-			this.sslDecryptedBuffer.limit(newLimit);
+			final int newLimit = this.sslDecrypted.limit() - numBytes;
+			this.sslDecrypted.position(numBytes);
+			this.sslDecrypted.compact();
+			this.sslDecrypted.limit(newLimit);
 			
 			//XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
 		}
