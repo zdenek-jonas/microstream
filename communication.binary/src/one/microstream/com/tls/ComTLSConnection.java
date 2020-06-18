@@ -269,6 +269,7 @@ public class ComTLSConnection implements ComConnection
 		
 		while(!this.sslEngine.isOutboundDone())
 		{
+			this.sslEncyptedOut.clear();
 			try
 			{
 				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptedOut);
