@@ -41,7 +41,7 @@ public class ComTLSConnection implements ComConnection
 	private final SSLEngine		sslEngine;
 
 	private final ByteBuffer    sslEncyptedOut;
-	private final ByteBuffer    sslEnryptedIn;
+	private final ByteBuffer    sslEncryptedIn;
 	private final ByteBuffer    sslDecrypted;
 	
 	
@@ -72,7 +72,7 @@ public class ComTLSConnection implements ComConnection
 		this.sslEngine.setUseClientMode(clientMode);
 		this.sslEngine.setSSLParameters(sslParameters);
 								
-		this.sslEnryptedIn    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslEncryptedIn    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslEncyptedOut   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslDecrypted     = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		
@@ -221,7 +221,7 @@ public class ComTLSConnection implements ComConnection
 	        	case NEED_UNWRAP:
 	        		
 	        		XDebug.println("case NEED_UNWRAP");
-	        		hs = this.unwrapHandshakeData(this.sslEnryptedIn, this.sslDecrypted);
+	        		hs = this.unwrapHandshakeData(this.sslEncryptedIn, this.sslDecrypted);
 	        		break;
 	        		
 	        	case NEED_WRAP :
@@ -384,9 +384,9 @@ public class ComTLSConnection implements ComConnection
 		XDebug.println("read no allready decrypted data available, reading data ... ");
 				
 		boolean needMoreData = true;
-		if(this.sslEnryptedIn.position() > 0)
+		if(this.sslEncryptedIn.position() > 0)
 		{
-			this.sslEnryptedIn.flip();
+			this.sslEncryptedIn.flip();
 			//this.sslDecrypted.clear();
 			final SSLEngineResult result = this.unwrapData();
 			
@@ -396,20 +396,20 @@ public class ComTLSConnection implements ComConnection
 			{
 				needMoreData = false;
 				XDebug.println("Decrypted " + result.bytesProduced() + " Bytes");
-				this.sslEnryptedIn.compact();
+				this.sslEncryptedIn.compact();
 			}
 			
 			if(result.getStatus() == Status.BUFFER_UNDERFLOW)
 			{
-				this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
-				this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
+				this.sslEncryptedIn.position(this.sslEncryptedIn.limit());
+				this.sslEncryptedIn.limit(this.sslEncryptedIn.capacity());
 			}
 			
 		}
 							
 		if(needMoreData)
 		{
-			this.readInternal(this.channel, this.sslEnryptedIn);
+			this.readInternal(this.channel, this.sslEncryptedIn);
 		}
 	}
 
@@ -589,7 +589,7 @@ public class ComTLSConnection implements ComConnection
 	{
 		try
 		{
-			return this.sslEngine.unwrap(this.sslEnryptedIn, this.sslDecrypted);
+			return this.sslEngine.unwrap(this.sslEncryptedIn, this.sslDecrypted);
 		}
 		catch (final SSLException e)
 		{
@@ -607,11 +607,11 @@ public class ComTLSConnection implements ComConnection
 	 */
 	private void readAfterUnderflow()
 	{
-		if(this.sslEnryptedIn.hasRemaining())
+		if(this.sslEncryptedIn.hasRemaining())
 		{
-			this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
-			this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
-			this.readInternal(this.channel, this.sslEnryptedIn);
+			this.sslEncryptedIn.position(this.sslEncryptedIn.limit());
+			this.sslEncryptedIn.limit(this.sslEncryptedIn.capacity());
+			this.readInternal(this.channel, this.sslEncryptedIn);
 		}
 		
 		//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
