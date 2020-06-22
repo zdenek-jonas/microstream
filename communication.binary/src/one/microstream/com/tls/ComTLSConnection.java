@@ -360,89 +360,185 @@ public class ComTLSConnection implements ComConnection
 		}
 		
 		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
-			
-			
+		
 		while(outBuffer.position() < length)
 		{
 			if(this.sslDecrypted.position() == 0)
 			{
-				XDebug.println("read no allready decrypted data available, reading data ... ");
+				this.decryptPackage();
+			}
+			else
+			{
+				this.appendDecrypedData(outBuffer, length);
+			}
+		}
+			
+		return outBuffer;
+	}
+	
+	/**
+	 * read network data and decrypt until one block is done
+	 */
+	private void decryptPackage()
+	{
+		XDebug.println("read no allready decrypted data available, reading data ... ");
 				
-				if(this.sslEnryptedIn.position() == 0)
-				{
-					XDebug.println("calling readCompletely ... ");
-					//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-					
-					this.readInternal(this.channel, this.sslEnryptedIn);
-					
-				}
-									
-				this.sslDecrypted.clear();
-				this.sslEnryptedIn.flip();
-				
-				final SSLEngineResult result = this.unwrapData();
-											
-				if(result.getStatus() == Status.BUFFER_UNDERFLOW)
-				{
-					XDebug.println("BUFFER_UNDERFLOW");
-					
-					if(this.sslEnryptedIn.hasRemaining())
-					{
-						this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
-						this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
-						
-						//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-						this.readInternal(this.channel, this.sslEnryptedIn);
-						continue;
-					}
-					
-					//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
-					try
-					{
-						Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
-					}
-					catch (final InterruptedException e)
-					{
-						throw new ComException(e);
-					}
-				}
-				
-				this.sslDecrypted.flip();
-				XDebug.println("unwrap result  : " + result.getStatus());
-				XDebug.println("unwrap consumed: " + result.bytesConsumed());
-				XDebug.println("unwrap bytes produced: " + result.bytesProduced());
-				
+		boolean needMoreData = true;
+		if(this.sslEnryptedIn.position() > 0)
+		{
+			this.sslEnryptedIn.flip();
+			//this.sslDecrypted.clear();
+			final SSLEngineResult result = this.unwrapData();
+			
+			XDebug.println("Wrap status: " + result.getStatus());
+			
+			if(result.getStatus() == Status.OK)
+			{
+				needMoreData = false;
+				XDebug.println("Decrypted " + result.bytesProduced() + " Bytes");
 				this.sslEnryptedIn.compact();
-				//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
-				
+			}
+			
+			if(result.getStatus() == Status.BUFFER_UNDERFLOW)
+			{
+				this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
+				this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
+			}
+			
+		}
+							
+		if(needMoreData)
+		{
+			this.readInternal(this.channel, this.sslEnryptedIn);
+		}
+	}
 
-			}
-					
-			final int numBytes = Math.min(length, this.sslDecrypted.limit());
-			
-			try
-			{
-				outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
-			}
-			catch(final IndexOutOfBoundsException | BufferOverflowException e)
-			{
-				throw new ComException("faild to copy to out buffer", e);
-			}
-			
-			final int newLimit = this.sslDecrypted.limit() - numBytes;
-			this.sslDecrypted.position(numBytes);
-			this.sslDecrypted.compact();
-			this.sslDecrypted.limit(newLimit);
-			
-			//XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
+
+	/**
+	 * Append already decrypted data to the supplied buffer
+	 * 
+	 * @param outBuffer
+	 * @param length
+	 */
+	private void appendDecrypedData(final ByteBuffer outBuffer, final int length)
+	{
+		XDebug.println("appending allready decrypted data");
+				
+		this.sslDecrypted.flip();
+		final int numBytes = Math.min(length, this.sslDecrypted.limit());
+		
+		try
+		{
+			outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
+			XDebug.println("Appended " + numBytes + " Bytes");
+		}
+		catch(final IndexOutOfBoundsException | BufferOverflowException e)
+		{
+			throw new ComException("faild to copy to out buffer", e);
 		}
 		
-		XDebug.println("--");
-		
-		return outBuffer;
+		this.sslDecrypted.position(numBytes);
+		this.sslDecrypted.compact();
 		
 	}
 
+
+	
+//	@Override
+//	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
+//	{
+//		XDebug.println("++");
+//		XDebug.println("Start read bytes: " + length);
+//
+//		if(!this.channel.isOpen())
+//		{
+//			throw new ComException("Can not read from closed channel!");
+//		}
+//
+//		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
+//
+//
+//		while(outBuffer.position() < length)
+//		{
+//			if(this.sslDecrypted.position() == 0)
+//			{
+//				XDebug.println("read no allready decrypted data available, reading data ... ");
+//
+//				if(this.sslEnryptedIn.position() == 0)
+//				{
+//					XDebug.println("calling readCompletely ... ");
+//					//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+//
+//					this.readInternal(this.channel, this.sslEnryptedIn);
+//
+//				}
+//
+//				this.sslDecrypted.clear();
+//				this.sslEnryptedIn.flip();
+//
+//				final SSLEngineResult result = this.unwrapData();
+//
+//				if(result.getStatus() == Status.BUFFER_UNDERFLOW)
+//				{
+//					XDebug.println("BUFFER_UNDERFLOW");
+//
+//					if(this.sslEnryptedIn.hasRemaining())
+//					{
+//						this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
+//						this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
+//
+//						//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+//						this.readInternal(this.channel, this.sslEnryptedIn);
+//						continue;
+//					}
+//
+//					//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
+//					try
+//					{
+//						Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
+//					}
+//					catch (final InterruptedException e)
+//					{
+//						throw new ComException(e);
+//					}
+//				}
+//
+//				this.sslDecrypted.flip();
+//				XDebug.println("unwrap result  : " + result.getStatus());
+//				XDebug.println("unwrap consumed: " + result.bytesConsumed());
+//				XDebug.println("unwrap bytes produced: " + result.bytesProduced());
+//
+//				this.sslEnryptedIn.compact();
+//				//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+//
+//
+//			}
+//
+//			final int numBytes = Math.min(length, this.sslDecrypted.limit());
+//
+//			try
+//			{
+//				outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
+//			}
+//			catch(final IndexOutOfBoundsException | BufferOverflowException e)
+//			{
+//				throw new ComException("faild to copy to out buffer", e);
+//			}
+//
+//			final int newLimit = this.sslDecrypted.limit() - numBytes;
+//			this.sslDecrypted.position(numBytes);
+//			this.sslDecrypted.compact();
+//			this.sslDecrypted.limit(newLimit);
+//
+//			//XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
+//		}
+//
+//		XDebug.println("--");
+//
+//		return outBuffer;
+//
+//	}
+	
 
 	private void readInternal(final SocketChannel channel, final ByteBuffer buffer)
 	{
@@ -451,6 +547,7 @@ public class ComTLSConnection implements ComConnection
 		try
 		{
 			bytesRead = channel.read(buffer);
+			XDebug.println("read internaly bytes: " + bytesRead);
 		}
 		catch (final IOException e)
 		{
