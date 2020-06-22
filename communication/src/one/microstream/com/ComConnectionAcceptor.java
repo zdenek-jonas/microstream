@@ -116,7 +116,7 @@ public interface ComConnectionAcceptor<C>
 			}
 			catch(final Throwable e)
 			{
-				XDebug.println("Protokoll exchange failed");
+				XDebug.println("Protokoll exchange failed: \n" + e);
 			}
 		}
 		

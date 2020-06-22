@@ -205,7 +205,6 @@ public class ComTLSConnection implements ComConnection
 	
 	private void doHandshake() throws IOException
 	{
-			
 		final SSLSession session = this.sslEngine.getSession();
 		final ByteBuffer handshakeData = ByteBuffer.allocate(session.getApplicationBufferSize());
 		
@@ -222,25 +221,19 @@ public class ComTLSConnection implements ComConnection
 	        	case NEED_UNWRAP:
 	        		
 	        		XDebug.println("case NEED_UNWRAP");
-	        		
 	        		hs = this.unwrapHandshakeData(this.sslEnryptedIn, this.sslDecrypted);
-	        			               	        			        			    	                     		
 	        		break;
 	        		
 	        	case NEED_WRAP :
 	        		
 	        		XDebug.println("case NEED_WRAP");
-	        		
 	        		hs = this.wrapHandshakeData(handshakeData, this.sslEncyptedOut);
-						        		
 	        		break;
 	        		
 	        	case NEED_TASK :
 	        		
 	        		XDebug.println("case NEED_TASK");
-	        			        		
 	        		hs = this.executeHandshakeTask();
-	        			        		
 	        		break;
                 	        		
 				default:
@@ -316,10 +309,11 @@ public class ComTLSConnection implements ComConnection
 		
 		while(buffer.remaining() > 0)
 		{
+			final SSLEngineResult result;
+			
 			try
 			{
-				final SSLEngineResult result = this.sslEngine.wrap(buffer, this.sslEncyptedOut);
-				XDebug.println("wrap result: " + result.getStatus());
+				result = this.sslEngine.wrap(buffer, this.sslEncyptedOut);
 				this.sslEncyptedOut.flip();
 			}
 			catch (final SSLException e)
@@ -327,7 +321,23 @@ public class ComTLSConnection implements ComConnection
 				throw new ComException("failed to encypt buffer", e);
 			}
 			
-			XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
+			
+			XDebug.println("wrap result: " + result.getStatus());
+			switch(result.getStatus())
+			{
+				case BUFFER_OVERFLOW:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case BUFFER_UNDERFLOW:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case CLOSED:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case OK:
+					XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
+					break;
+				default:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+			}
+					
 			this.sslEncyptedOut.clear();
 		}
 	}
@@ -349,18 +359,8 @@ public class ComTLSConnection implements ComConnection
 			throw new ComException("Can not read from closed channel!");
 		}
 		
-		final ByteBuffer outBuffer;
-		
-		if(defaultBuffer.capacity() < length)
-		{
-			outBuffer = ByteBuffer.allocateDirect(length);
-		}
-		else
-		{
-			outBuffer = defaultBuffer;
-			outBuffer.clear();
-		}
-	
+		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
+			
 			
 		while(outBuffer.position() < length)
 		{
@@ -380,47 +380,42 @@ public class ComTLSConnection implements ComConnection
 				this.sslDecrypted.clear();
 				this.sslEnryptedIn.flip();
 				
-				try
+				final SSLEngineResult result = this.unwrapData();
+											
+				if(result.getStatus() == Status.BUFFER_UNDERFLOW)
 				{
-					final SSLEngineResult result = this.sslEngine.unwrap(this.sslEnryptedIn, this.sslDecrypted);
-												
-					if(result.getStatus() == Status.BUFFER_UNDERFLOW)
+					XDebug.println("BUFFER_UNDERFLOW");
+					
+					if(this.sslEnryptedIn.hasRemaining())
 					{
-						XDebug.println("BUFFER_UNDERFLOW");
+						this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
+						this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
 						
-						if(this.sslEnryptedIn.hasRemaining())
-						{
-							this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
-							this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
-							
-							//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-							this.readInternal(this.channel, this.sslEnryptedIn);
-							continue;
-						}
-						
-						//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
-						try
-						{
-							Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
-						}
-						catch (final InterruptedException e)
-						{
-							throw new ComException(e);
-						}
+						//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
+						this.readInternal(this.channel, this.sslEnryptedIn);
+						continue;
 					}
 					
-					this.sslDecrypted.flip();
-					XDebug.println("unwrap result  : " + result.getStatus());
-					XDebug.println("unwrap consumed: " + result.bytesConsumed());
-					XDebug.println("unwrap bytes produced: " + result.bytesProduced());
-					
-					this.sslEnryptedIn.compact();
-					//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+					//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
+					try
+					{
+						Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
+					}
+					catch (final InterruptedException e)
+					{
+						throw new ComException(e);
+					}
 				}
-				catch (final SSLException e)
-				{
-					throw new ComException("failed to decypt buffer", e);
-				}
+				
+				this.sslDecrypted.flip();
+				XDebug.println("unwrap result  : " + result.getStatus());
+				XDebug.println("unwrap consumed: " + result.bytesConsumed());
+				XDebug.println("unwrap bytes produced: " + result.bytesProduced());
+				
+				this.sslEnryptedIn.compact();
+				//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
+				
+
 			}
 					
 			final int numBytes = Math.min(length, this.sslDecrypted.limit());
@@ -465,6 +460,71 @@ public class ComTLSConnection implements ComConnection
 		if(bytesRead < 0)
 		{
 			throw new ComException("reached end of stream unexpected");
+		}
+	}
+	
+	/**
+	 * If the supplied buffer is to small to hold the required input size
+	 * an new appropriate buffer is created;
+	 * @param length
+	 * @param defaultBuffer
+	 * 
+	 * @return ByteBuffer
+	 */
+	private ByteBuffer ensureOutBufferSize(final ByteBuffer defaultBuffer, final int length)
+	{
+		final ByteBuffer outBuffer;
+		
+		if(defaultBuffer.capacity() < length)
+		{
+			outBuffer = ByteBuffer.allocateDirect(length);
+		}
+		else
+		{
+			outBuffer = defaultBuffer;
+			outBuffer.clear();
+		}
+		
+		return outBuffer;
+	}
+	
+	private SSLEngineResult unwrapData()
+	{
+		try
+		{
+			return this.sslEngine.unwrap(this.sslEnryptedIn, this.sslDecrypted);
+		}
+		catch (final SSLException e)
+		{
+			throw new ComException("failed to decypt buffer", e);
+		}
+	}
+	
+	/**
+	 * Try to read more data from the network if the input buffer is not empty
+	 * This is the case if the last sslPackets was incomplete.
+	 * in that case a decryption should be done again after the read.
+	 * 
+	 * If the input buffer is empty wait a short moment and retry
+	 * 
+	 */
+	private void readAfterUnderflow()
+	{
+		if(this.sslEnryptedIn.hasRemaining())
+		{
+			this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
+			this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
+			this.readInternal(this.channel, this.sslEnryptedIn);
+		}
+		
+		//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
+		try
+		{
+			Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
+		}
+		catch (final InterruptedException e)
+		{
+			throw new ComException(e);
 		}
 	}
 }
