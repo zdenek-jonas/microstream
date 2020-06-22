@@ -8,7 +8,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.util.Arrays;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -72,10 +71,6 @@ public interface TLSKeyManagerProvider
 			catch (NoSuchAlgorithmException | CertificateException | IOException e)
 			{
 				throw new ComException("failed to load keys from file", e);
-			}
-			finally
-			{
-				Arrays.fill(password, '0');
 			}
 		}
 
