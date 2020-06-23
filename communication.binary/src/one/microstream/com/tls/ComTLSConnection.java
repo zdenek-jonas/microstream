@@ -21,7 +21,6 @@ import javax.net.ssl.SSLSession;
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
 import one.microstream.com.XSockets;
-import one.microstream.meta.XDebug;
 
 public class ComTLSConnection implements ComConnection
 {
@@ -50,19 +49,6 @@ public class ComTLSConnection implements ComConnection
 		final TLSParametersProvider tlsParameterProvider,
 		final boolean clientMode)
 	{
-		XDebug.println("++");
-		
-		try
-		{
-			XDebug.println("local address:  " + channel.getLocalAddress());
-			XDebug.println("remote address: " + channel.getRemoteAddress());
-		}
-		catch (final IOException e)
-		{
-			throw new ComException("Failed to get connection info", e);
-		}
-		
-		
 		this.sslHandshakeReadTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
 		
 		this.channel = channel;
@@ -99,9 +85,6 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
 	{
-		XDebug.println("++");
-		XDebug.println("Start read bytes: " + length);
-		
 		if(!this.channel.isOpen())
 		{
 			throw new ComException("Can not read from closed channel!");
@@ -127,7 +110,6 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
-		XDebug.println("++");
 		//this zero sized buffer is needed for the SSLEngine to create the closing messages
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
@@ -145,9 +127,7 @@ public class ComTLSConnection implements ComConnection
 			{
 				throw new ComException("failed to encypt buffer", e);
 			}
-			
-			XDebug.println("Close wrap status: " + result.getStatus());
-			
+						
 			if(result.getStatus() == Status.OK)
 			{
 				XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
@@ -156,7 +136,6 @@ public class ComTLSConnection implements ComConnection
 			this.sslEncyptedOut.compact();
 		}
 		
-		XDebug.println("Closing channel");
 		XSockets.closeChannel(this.channel);
 	}
 
@@ -170,17 +149,11 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void write(final ByteBuffer buffer, final int timeout)
 	{
-		XDebug.println("++");
-		XDebug.println("Start writing bytes: " + buffer.limit());
-		
 		if(!this.channel.isOpen())
 		{
 			throw new ComException("Can not write to closed channel!");
 		}
-		
-		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
-		XDebug.println("max Packet Size: " + maxPacketSize);
-		
+				
 		while(buffer.remaining() > 0)
 		{
 			final SSLEngineResult result;
@@ -195,8 +168,6 @@ public class ComTLSConnection implements ComConnection
 				throw new ComException("failed to encypt buffer", e);
 			}
 			
-			
-			XDebug.println("wrap result: " + result.getStatus());
 			switch(result.getStatus())
 			{
 				case BUFFER_OVERFLOW:
@@ -253,10 +224,7 @@ public class ComTLSConnection implements ComConnection
 			 		
 		if(peerNetData.position() == 0)
 		{
-			//final int bytesRead = this.channel.read(peerNetData);
-			//XDebug.println("bytes read: " + bytesRead);
 			this.read(this.channel, peerNetData, 1000);
-			
 		}
 		
 		peerNetData.flip();
@@ -266,10 +234,7 @@ public class ComTLSConnection implements ComConnection
  		{
 	 		final SSLEngineResult engineResult = this.sslEngine.unwrap(peerNetData, peerAppData);
 	 		hs = engineResult.getHandshakeStatus();
-	 			 		
-	 		XDebug.println("Unwrap status: " + engineResult.getStatus() + " bytes consumed: " + engineResult.bytesConsumed());
-	 		XDebug.println("Handshake status: " + hs);
-	 			 			 		 			 		
+	 			 			 			 			 		 			 		
 	 		final Status status = engineResult.getStatus();
 	 		
 	 		if(status != Status.OK)
@@ -296,10 +261,7 @@ public class ComTLSConnection implements ComConnection
 		netData.clear();
 		final SSLEngineResult engineResult = this.sslEngine.wrap(appData, netData);
 		final SSLEngineResult.HandshakeStatus hs = engineResult.getHandshakeStatus();
-									
-		XDebug.println("Wrap status: " + engineResult.getStatus());
-		XDebug.println("Handshake status: " + hs);
-		
+											
 		if(engineResult.getStatus() == SSLEngineResult.Status.OK )
 		{
 			netData.flip();
@@ -341,25 +303,17 @@ public class ComTLSConnection implements ComConnection
 	    while (hs != SSLEngineResult.HandshakeStatus.FINISHED &&
 	            hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
 	    {
-	    	XDebug.println("Handshake status: " + hs);
-	    		    	    	
 			switch (hs)
 	    	{
 	        	case NEED_UNWRAP:
-	        		
-	        		XDebug.println("case NEED_UNWRAP");
 	        		hs = this.unwrapHandshakeData(this.sslEncryptedIn, this.sslDecrypted);
 	        		break;
 	        		
 	        	case NEED_WRAP :
-	        		
-	        		XDebug.println("case NEED_WRAP");
 	        		hs = this.wrapHandshakeData(handshakeData, this.sslEncyptedOut);
 	        		break;
 	        		
 	        	case NEED_TASK :
-	        		
-	        		XDebug.println("case NEED_TASK");
 	        		hs = this.executeHandshakeTask();
 	        		break;
                 	        		
@@ -367,39 +321,23 @@ public class ComTLSConnection implements ComConnection
 					//should never happen but if so throw an exception to avoid unknown behavior during the SSL handshake
 					throw new ComException("Unexpected handshake status: " + hs );
 	    	}
-	    		    	
-	    	XDebug.println("Handshake status: " + hs);
 	    }
-	    
-//    	XDebug.println("appData:     " + appData.remaining()     + " " + appData.position()     + " " + appData.limit() );
-//    	XDebug.println("netData:     " + netData.remaining()     + " " + netData.position()     + " " + netData.limit() );
-//    	XDebug.println("peerAppData: " + peerAppData.remaining() + " " + peerAppData.position() + " " + peerAppData.limit() );
-//    	XDebug.println("peerNetData: " + peerNetData.remaining() + " " + peerNetData.position() + " " + peerNetData.limit() );
 	}
-
-	
-	
-
-	
+		
 	/**
 	 * read network data and decrypt until one block is done
 	 */
 	private void decryptPackage()
 	{
-		XDebug.println("read no allready decrypted data available, reading data ... ");
-				
 		boolean needMoreData = true;
 		if(this.sslEncryptedIn.position() > 0)
 		{
 			this.sslEncryptedIn.flip();
 			final SSLEngineResult result = this.unwrapData();
-			
-			XDebug.println("Wrap status: " + result.getStatus());
-			
+						
 			if(result.getStatus() == Status.OK)
 			{
 				needMoreData = false;
-				XDebug.println("Decrypted " + result.bytesProduced() + " Bytes");
 				this.sslEncryptedIn.compact();
 			}
 			
@@ -430,15 +368,12 @@ public class ComTLSConnection implements ComConnection
 	 */
 	private void appendDecrypedData(final ByteBuffer outBuffer, final int length)
 	{
-		XDebug.println("appending allready decrypted data");
-				
 		this.sslDecrypted.flip();
 		final int numBytes = Math.min(length, this.sslDecrypted.limit());
 		
 		try
 		{
 			outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
-			XDebug.println("Appended " + numBytes + " Bytes");
 		}
 		catch(final IndexOutOfBoundsException | BufferOverflowException e)
 		{
@@ -465,7 +400,6 @@ public class ComTLSConnection implements ComConnection
 		try
 		{
 			bytesRead = channel.read(buffer);
-			XDebug.println("read internaly bytes: " + bytesRead);
 		}
 		catch (final IOException e)
 		{

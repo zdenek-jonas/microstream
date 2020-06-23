@@ -170,9 +170,7 @@ public interface ComConnectionHandler<C>
 		{
 			final ByteBuffer lengthBuffer = XMemory.allocateDirectNative(this.protocolLengthDigitCount);
 			this.read(connection, lengthBuffer);
-			
-//			XDebug.printDirectByteBuffer(lengthBuffer);
-			
+						
 			// buffer position must be reset for the decoder to see the bytes
 			lengthBuffer.position(0);
 			final String lengthDigits = XChars.standardCharset().decode(lengthBuffer).toString();

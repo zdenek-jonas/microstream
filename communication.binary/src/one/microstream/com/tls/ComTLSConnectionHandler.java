@@ -20,7 +20,6 @@ import one.microstream.com.ComProtocol;
 import one.microstream.com.ComProtocolStringConverter;
 import one.microstream.com.XSockets;
 import one.microstream.memory.XMemory;
-import one.microstream.meta.XDebug;
 
 public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection>
 {
@@ -56,7 +55,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		final SecureRandomProvider    randomProvider)
 	{
 		super();
-		XDebug.println("++");
 		
 		this.tlsParameterProvider = tlsParameterProvider;
 		this.keyManagerProvider   = keyManagerProvider;
@@ -92,7 +90,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		final TLSParametersProvider   tlsParameterProvider,
 		final SecureRandomProvider    randomProvider)
 	{
-		XDebug.println("++");
 		return new ComTLSConnectionHandler(keyManagerProvider, trustManagerProvider, tlsParameterProvider, randomProvider);
 	}
 	
@@ -101,18 +98,16 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	////////////
 	
 	@Override
-	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address) {
-		XDebug.println("++");
-		
+	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address)
+	{
 		final ServerSocketChannel serverSocketChannel = XSockets.openServerSocketChannel(address);
 		return new ComTLSConnectionListener(serverSocketChannel, this.context, this.tlsParameterProvider);
 	}
 
 
 	@Override
-	public ComTLSConnection openConnection(final InetSocketAddress address) {
-		XDebug.println("++");
-		
+	public ComTLSConnection openConnection(final InetSocketAddress address)
+	{
 		final SocketChannel clientChannel = XSockets.openChannel(address);
 		return new ComTLSConnection(clientChannel, this.context, this.tlsParameterProvider, TLS_CLIENT_MODE);
 	}
@@ -152,7 +147,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	@Override
 	public void read(final ComConnection connection, final ByteBuffer buffer)
 	{
-		XDebug.println("++");
 		connection.readCompletely(buffer);
 
 	}
@@ -160,7 +154,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	@Override
 	public void write(final ComConnection connection, final ByteBuffer buffer)
 	{
-		XDebug.println("++");
 		connection.writeCompletely(buffer);
 	}
 
@@ -168,8 +161,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	public void sendProtocol(final ComConnection connection, final ComProtocol protocol,
 			final ComProtocolStringConverter stringConverter)
 	{
-		XDebug.println("++");
-		
 		final ByteBuffer bufferedProtocol = Com.bufferProtocol(
 				protocol                     ,
 				stringConverter              ,

@@ -14,7 +14,6 @@ import one.microstream.com.ComFoundation;
 import one.microstream.com.ComHost;
 import one.microstream.com.ComHostChannelAcceptor;
 import one.microstream.memory.XMemory;
-import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.types.Binary;
 
 
@@ -97,19 +96,14 @@ public class ComBinary
 		ByteBuffer filledContentBuffer;
 		
 		// the known-length header is read into a buffer
-		//XDebug.printBufferStats(defaultBuffer, "defaultBuffer");
 		filledHeaderBuffer = channel.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
-		//XDebug.printBufferStats(filledHeaderBuffer, "filledHeaderBuffer");
-				
-		
+							
 		// the header starts with the content length (and currently, that is the whole header)
 		final long chunkContentLength = ComBinary.getChunkHeaderContentLength(
 			filledHeaderBuffer,
 			switchedByteOrder
 		);
-		
-		XDebug.println("chunkContentLength " + chunkContentLength);
-		
+				
 		/* (13.11.2018 TM)NOTE:
 		 * Should the header contain validation meta-data in the future, they have to be validated here.
 		 * This would probably mean turning this method into a instance of a com-handling type.
@@ -130,15 +124,10 @@ public class ComBinary
 		throws ComException, ComExceptionTimeout
 	{
 		// the chunk header (specifying the chunk data length) is sent first, then the actual chunk data.
-		// XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
-		
-		//XDebug.printBufferStats(headerBuffer, "writing header buffer");
 		channel.write(headerBuffer, operationTimeout());
 		
 		for(final ByteBuffer bb : buffers)
 		{
-			//XSockets.writeFromBuffer(channel, bb, operationTimeout());
-			//XDebug.printBufferStats(bb, "writing content bb buffer");
 			channel.write(bb, operationTimeout());
 		}
 	}
