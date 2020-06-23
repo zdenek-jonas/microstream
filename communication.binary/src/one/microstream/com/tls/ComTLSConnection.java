@@ -16,7 +16,6 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
 import one.microstream.com.ComConnection;
@@ -26,16 +25,6 @@ import one.microstream.meta.XDebug;
 
 public class ComTLSConnection implements ComConnection
 {
-	///////////////////////////////////////////////////////////////////////////
-	// constants //
-	//////////////
-	
-	/**
-	 * Timeout for blocking read operations during TLS handshake
-	 */
-	private static final int SSL_HANDSHAKE_READ_TIMEOUT  = 1000;
-
-	
 	///////////////////////////////////////////////////////////////////////////
 	// instance fields //
 	////////////////////
@@ -47,6 +36,10 @@ public class ComTLSConnection implements ComConnection
 	private final ByteBuffer    sslEncryptedIn;
 	private final ByteBuffer    sslDecrypted;
 	
+	/**
+	 * Timeout for blocking read operations during TLS handshake
+	 */
+	private final int sslHandshakeReadTimeOut;
 	
 	///////////////////////////////////////////////////////////////////////////
 	// constructors //
@@ -54,7 +47,7 @@ public class ComTLSConnection implements ComConnection
 	
 	public ComTLSConnection(final SocketChannel channel,
 		final SSLContext sslContext,
-		final SSLParameters sslParameters,
+		final TLSParametersProvider tlsParameterProvider,
 		final boolean clientMode)
 	{
 		XDebug.println("++");
@@ -70,10 +63,12 @@ public class ComTLSConnection implements ComConnection
 		}
 		
 		
+		this.sslHandshakeReadTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
+		
 		this.channel = channel;
 		this.sslEngine = sslContext.createSSLEngine();
 		this.sslEngine.setUseClientMode(clientMode);
-		this.sslEngine.setSSLParameters(sslParameters);
+		this.sslEngine.setSSLParameters(tlsParameterProvider.getSSLParameters());
 								
 		this.sslEncryptedIn    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslEncyptedOut   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
@@ -231,11 +226,15 @@ public class ComTLSConnection implements ComConnection
 		{
 			readResult = executor
 				.submit(() -> { return channel.read(buffer); })
-				.get(SSL_HANDSHAKE_READ_TIMEOUT, TimeUnit.MILLISECONDS);
+				.get(this.sslHandshakeReadTimeOut, TimeUnit.MILLISECONDS);
 		}
-		catch (InterruptedException | ExecutionException | TimeoutException e)
+		catch (InterruptedException | ExecutionException e)
 		{
 			throw new ComException("reading data during hanshake failed", e);
+		}
+		catch(final TimeoutException e)
+		{
+			throw new ComException("read timeout during hanshake", e);
 		}
 		finally
 		{

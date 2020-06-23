@@ -4,7 +4,11 @@ import javax.net.ssl.SSLParameters;
 
 public interface TLSParametersProvider
 {
-
+	/**
+	 * Provides the SSLParameters Object for the SSLEngine
+	 * 
+	 * @return SSLParameters
+	 */
 	SSLParameters getSSLParameters();
 	
 	/**
@@ -14,6 +18,13 @@ public interface TLSParametersProvider
 	 */
 	String getSSLProtocol();
 
+	/**
+	 * Timeout for read operations during the TLS handshake in milliseconds
+	 * 
+	 * @return
+	 */
+	int getHandshakeReadTimeOut();
+	
 	/**
 	 * 
 	 * Provides a nearly empty SSLParameters object.
@@ -29,8 +40,8 @@ public interface TLSParametersProvider
 		// constants //
 		//////////////
 		
-		private static final String TLS_PROTOCOL_STRING = "TLSv1.2";
-		
+		private static final String TLS_PROTOCOL_STRING        = "TLSv1.2";
+		private static final int    SSL_HANDSHAKE_READ_TIMEOUT = 1000;
 		
 		///////////////////////////////////////////////////////////////////////////
 		// constructors //
@@ -60,8 +71,14 @@ public interface TLSParametersProvider
 		{
 			return Default.TLS_PROTOCOL_STRING;
 		}
+
+
+		@Override
+		public int getHandshakeReadTimeOut()
+		{
+			return SSL_HANDSHAKE_READ_TIMEOUT;
+		}
 		
 	}
-
 
 }

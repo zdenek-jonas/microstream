@@ -159,6 +159,8 @@ public interface ComHost<C> extends Runnable
 			}
 			catch(final ComException e)
 			{
+				//intentional, don't stop the host if a connection attempt failed
+				e.printStackTrace();
 				return;
 			}
 			

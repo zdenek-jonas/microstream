@@ -105,7 +105,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		XDebug.println("++");
 		
 		final ServerSocketChannel serverSocketChannel = XSockets.openServerSocketChannel(address);
-		return new ComTLSConnectionListener(serverSocketChannel, this.context, this.tlsParameterProvider.getSSLParameters());
+		return new ComTLSConnectionListener(serverSocketChannel, this.context, this.tlsParameterProvider);
 	}
 
 
@@ -114,7 +114,7 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 		XDebug.println("++");
 		
 		final SocketChannel clientChannel = XSockets.openChannel(address);
-		return new ComTLSConnection(clientChannel, this.context, this.tlsParameterProvider.getSSLParameters(), TLS_CLIENT_MODE);
+		return new ComTLSConnection(clientChannel, this.context, this.tlsParameterProvider, TLS_CLIENT_MODE);
 	}
 
 	@Override

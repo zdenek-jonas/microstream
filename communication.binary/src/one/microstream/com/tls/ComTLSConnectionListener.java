@@ -5,7 +5,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
 
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComConnectionListener;
@@ -21,7 +20,7 @@ public class ComTLSConnectionListener implements ComConnectionListener<ComConnec
 	
 	private final ServerSocketChannel serverSocketChannel;
 	private final SSLContext sslContext;
-	private final SSLParameters sslParameters;
+	private final TLSParametersProvider sslParameters;
 
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -31,12 +30,12 @@ public class ComTLSConnectionListener implements ComConnectionListener<ComConnec
 	public ComTLSConnectionListener(
 		final ServerSocketChannel serverSocketChannel,
 		final SSLContext context,
-		final SSLParameters sslParameters)
+		final TLSParametersProvider tlsParameterProvider)
 	{
 		super();
 		this.serverSocketChannel = serverSocketChannel;
 		this.sslContext = context;
-		this.sslParameters = sslParameters;
+		this.sslParameters = tlsParameterProvider;
 	}
 
 	
