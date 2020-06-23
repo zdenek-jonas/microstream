@@ -33,7 +33,6 @@ public class ComTLSConnection implements ComConnection
 	/**
 	 * Delay in case of an SSL unwrap buffer underflow in ms
 	 */
-	private static final int SSL_BUFFER_UNDERFLOW_RETRY_DELAY = 10;
 	private static final int SSL_HANDSHAKE_READ_TIMEOUT       = 1000;
 	
 	
