@@ -10,7 +10,9 @@ public class MainTestComClientDynamic
 	public static void main(final String[] args)
 	{
 		
-		final ComClient<?> client = ComBinaryDynamic.Client();
+		final ComClient<?> client = ComBinaryDynamic.Foundation()
+			.createClient();
+								
 		
 		// create a channel by connecting the client
 		final ComChannel channel = client.connect();
@@ -28,5 +30,6 @@ public class MainTestComClientDynamic
 		
 		
 		channel.send("exit");
+		channel.close();
 	}
 }

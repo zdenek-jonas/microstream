@@ -4,9 +4,9 @@ import static one.microstream.X.mayNull;
 import static one.microstream.X.notNull;
 
 import java.nio.ByteOrder;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.collections.types.XGettingEnum;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComPersistenceAdaptor;
 import one.microstream.com.ComPersistenceAdaptorCreator;
 import one.microstream.com.ComProtocol;
@@ -111,7 +111,7 @@ public interface ComPersistenceAdaptorBinary<C> extends ComPersistenceAdaptor<C>
 						
 	}
 
-	public final class Default extends ComPersistenceAdaptorBinary.Abstract<SocketChannel>
+	public final class Default extends ComPersistenceAdaptorBinary.Abstract<ComConnection>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// constructors //
@@ -137,7 +137,7 @@ public interface ComPersistenceAdaptorBinary<C> extends ComPersistenceAdaptor<C>
 		
 		@Override
 		public PersistenceFoundation<?, ?> provideHostPersistenceFoundation(
-			final SocketChannel connection
+			final ComConnection connection
 		)
 		{
 			this.initializeHostPersistenceFoundation();
@@ -159,7 +159,7 @@ public interface ComPersistenceAdaptorBinary<C> extends ComPersistenceAdaptor<C>
 		
 		@Override
 		public BinaryPersistenceFoundation<?> provideClientPersistenceFoundation(
-			final SocketChannel connection,
+			final ComConnection connection,
 			final ComProtocol   protocol
 		)
 		{
@@ -285,7 +285,7 @@ public interface ComPersistenceAdaptorBinary<C> extends ComPersistenceAdaptor<C>
 		}
 		
 		
-		public final class Default extends ComPersistenceAdaptorBinary.Creator.Abstract<SocketChannel>
+		public final class Default extends ComPersistenceAdaptorBinary.Creator.Abstract<ComConnection>
 		{
 			///////////////////////////////////////////////////////////////////////////
 			// instance fields //
@@ -306,7 +306,7 @@ public interface ComPersistenceAdaptorBinary<C> extends ComPersistenceAdaptor<C>
 			////////////
 
 			@Override
-			public ComPersistenceAdaptor<SocketChannel> createPersistenceAdaptor(
+			public ComPersistenceAdaptor<ComConnection> createPersistenceAdaptor(
 				final PersistenceIdStrategy  hostIdStrategyInitialization,
 				final XGettingEnum<Class<?>> entityTypes                 ,
 				final ByteOrder              hostByteOrder               ,

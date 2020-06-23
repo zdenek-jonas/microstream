@@ -4,12 +4,12 @@ import static one.microstream.X.mayNull;
 import static one.microstream.X.notNull;
 
 import java.nio.ByteOrder;
-import java.nio.channels.SocketChannel;
 import java.util.function.Consumer;
 
 import one.microstream.collections.types.XGettingEnum;
 import one.microstream.com.ComClient;
 import one.microstream.com.ComClientChannel;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComHost;
 import one.microstream.com.ComHostChannel;
 import one.microstream.com.ComPersistenceAdaptor;
@@ -32,7 +32,7 @@ import one.microstream.persistence.types.PersistenceTypeDictionaryView;
 import one.microstream.persistence.types.PersistenceTypeHandlerManager;
 import one.microstream.util.BufferSizeProvider;
 
-public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor<SocketChannel>
+public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor<ComConnection>
 {
 	private final BinaryPersistenceFoundation<?> foundation;
 	private final BufferSizeProvider             bufferSizeProvider;
@@ -147,7 +147,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	}
 
 	@Override
-	public PersistenceFoundation<?, ?> provideHostPersistenceFoundation(final SocketChannel connection)
+	public PersistenceFoundation<?, ?> provideHostPersistenceFoundation(final ComConnection connection)
 	{
 		if(connection != null)
 		{
@@ -175,7 +175,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		return hostFoundation;
 	}
 
-	private PersistenceFoundation<?, ?> hostConnectionFoundation(final SocketChannel connection)
+	private PersistenceFoundation<?, ?> hostConnectionFoundation(final ComConnection connection)
 	{
 		final BinaryPersistenceFoundation<?> hostFoundation = this.hostConnectionFoundation();
 				
@@ -198,7 +198,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	}
 	
 	@Override
-	public BinaryPersistenceFoundation<?> provideClientPersistenceFoundation(final SocketChannel connection,
+	public BinaryPersistenceFoundation<?> provideClientPersistenceFoundation(final ComConnection connection,
 			final ComProtocol protocol)
 	{
 		final BinaryPersistenceFoundation<?> clientFoundation = this.createInitializationFoundation();
@@ -232,20 +232,20 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 
 
 	@Override
-	public ComHostChannel<SocketChannel> createHostChannel(
-		final SocketChannel connection,
+	public ComHostChannel<ComConnection> createHostChannel(
+		final ComConnection connection,
 		final ComProtocol protocol,
-		final ComHost<SocketChannel> parent)
+		final ComHost<ComConnection> parent)
 	{
 		final PersistenceManager<?> pm = this.provideHostPersistenceManager(connection);
 		return new ComHostChannelDynamic<>(pm, connection, protocol, parent);
 	}
 	
 	@Override
-	public ComClientChannel<SocketChannel> createClientChannel(
-		final SocketChannel connection,
+	public ComClientChannel<ComConnection> createClientChannel(
+		final ComConnection connection,
 		final ComProtocol protocol,
-		final ComClient<SocketChannel> parent)
+		final ComClient<ComConnection> parent)
 	{
 		final BinaryPersistenceFoundation<?> clientFoundation = this.provideClientPersistenceFoundation(connection, protocol);
 		final PersistenceTypeHandlerManager<Binary> thm = clientFoundation.getTypeHandlerManager();
@@ -314,14 +314,14 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 	// Creator methods //
 	////////////////////
 	
-	public static ComPersistenceAdaptorCreator<SocketChannel> Creator()
+	public static ComPersistenceAdaptorCreator<ComConnection> Creator()
 	{
 		return Creator(
 			BinaryPersistenceFoundation.New()
 		);
 	}
 	
-	public static ComPersistenceAdaptorCreator<SocketChannel> Creator(
+	public static ComPersistenceAdaptorCreator<ComConnection> Creator(
 			final BinaryPersistenceFoundation<?> foundation
 		)
 	{
@@ -331,7 +331,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		);
 	}
 		
-	public static ComPersistenceAdaptorCreator<SocketChannel> Creator(
+	public static ComPersistenceAdaptorCreator<ComConnection> Creator(
 		final BinaryPersistenceFoundation<?> foundation        ,
 		final BufferSizeProvider             bufferSizeProvider
 	)

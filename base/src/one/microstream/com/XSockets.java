@@ -13,6 +13,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import one.microstream.memory.XMemory;
+import one.microstream.meta.XDebug;
 
 public final class XSockets
 {
@@ -240,7 +241,8 @@ public final class XSockets
 	{
 		try
 		{
-			channel.read(buffer);
+			final int numBytesRead = channel.read(buffer);
+			XDebug.println("bytes read: " + numBytesRead);
 		}
 		catch(final IOException e)
 		{

@@ -2,19 +2,19 @@ package one.microstream.com.binary;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.X;
 import one.microstream.com.Com;
 import one.microstream.com.ComClient;
 import one.microstream.com.ComClientChannel;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
 import one.microstream.com.ComExceptionTimeout;
 import one.microstream.com.ComFoundation;
 import one.microstream.com.ComHost;
 import one.microstream.com.ComHostChannelAcceptor;
-import one.microstream.com.XSockets;
 import one.microstream.memory.XMemory;
+import one.microstream.meta.XDebug;
 import one.microstream.persistence.binary.types.Binary;
 
 
@@ -87,7 +87,7 @@ public class ComBinary
 	
 	
 	public static ByteBuffer readChunk(
-		final SocketChannel channel          ,
+		final ComConnection channel          ,
 		final ByteBuffer    defaultBuffer    ,
 		final boolean       switchedByteOrder
 	)
@@ -97,12 +97,10 @@ public class ComBinary
 		ByteBuffer filledContentBuffer;
 		
 		// the known-length header is read into a buffer
-		filledHeaderBuffer = XSockets.readIntoBufferKnownLength(
-			channel,
-			defaultBuffer,
-			operationTimeout(),
-			ComBinary.chunkHeaderLength()
-		);
+		//XDebug.printBufferStats(defaultBuffer, "defaultBuffer");
+		filledHeaderBuffer = channel.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
+		//XDebug.printBufferStats(filledHeaderBuffer, "filledHeaderBuffer");
+				
 		
 		// the header starts with the content length (and currently, that is the whole header)
 		final long chunkContentLength = ComBinary.getChunkHeaderContentLength(
@@ -110,35 +108,38 @@ public class ComBinary
 			switchedByteOrder
 		);
 		
+		XDebug.println("chunkContentLength " + chunkContentLength);
+		
 		/* (13.11.2018 TM)NOTE:
 		 * Should the header contain validation meta-data in the future, they have to be validated here.
 		 * This would probably mean turning this method into a instance of a com-handling type.
 		 */
 		
 		// the content after the header is read into a buffer since the header has already been siphoned off.
-		filledContentBuffer = XSockets.readIntoBufferKnownLength(
-			channel,
-			defaultBuffer,
-			operationTimeout(),
-			X.checkArrayRange(chunkContentLength)
-		);
+		filledContentBuffer = channel.read(defaultBuffer, operationTimeout(), X.checkArrayRange(chunkContentLength));
+		filledContentBuffer.flip();
 		
 		return filledContentBuffer;
 	}
 	
 	public static void writeChunk(
-		final SocketChannel channel     ,
+		final ComConnection channel     ,
 		final ByteBuffer    headerBuffer,
 		final ByteBuffer[]  buffers
 	)
 		throws ComException, ComExceptionTimeout
 	{
 		// the chunk header (specifying the chunk data length) is sent first, then the actual chunk data.
-		XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
+		// XSockets.writeFromBuffer(channel, headerBuffer, operationTimeout());
+		
+		//XDebug.printBufferStats(headerBuffer, "writing header buffer");
+		channel.write(headerBuffer, operationTimeout());
 		
 		for(final ByteBuffer bb : buffers)
 		{
-			XSockets.writeFromBuffer(channel, bb, operationTimeout());
+			//XSockets.writeFromBuffer(channel, bb, operationTimeout());
+			//XDebug.printBufferStats(bb, "writing content bb buffer");
+			channel.write(bb, operationTimeout());
 		}
 	}
 	
@@ -160,27 +161,27 @@ public class ComBinary
 	// convenience methods //
 	////////////////////////
 	
-	public static final ComHost<SocketChannel> Host()
+	public static final ComHost<ComConnection> Host()
 	{
 		return Com.Host(DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final int localHostPort
 	)
 	{
 		return Com.Host(localHostPort, DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final InetSocketAddress  targetAddress
 	)
 	{
 		return Com.Host(targetAddress, DefaultPersistenceAdaptorCreator());
 	}
 	
-	public static final ComHost<SocketChannel> Host(
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+	public static final ComHost<ComConnection> Host(
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(
@@ -189,9 +190,9 @@ public class ComBinary
 		);
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final int                                   localHostPort  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(
@@ -200,9 +201,9 @@ public class ComBinary
 		);
 	}
 	
-	public static final ComHost<SocketChannel> Host(
+	public static final ComHost<ComConnection> Host(
 		final InetSocketAddress                     targetAddress  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		return Com.Host(targetAddress, DefaultPersistenceAdaptorCreator(), channelAcceptor);
@@ -229,7 +230,7 @@ public class ComBinary
 	}
 	
 	public static final void runHost(
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		runHost(
@@ -240,7 +241,7 @@ public class ComBinary
 	
 	public static final void runHost(
 		final int                                   localHostPort  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
 		runHost(
@@ -251,21 +252,21 @@ public class ComBinary
 	
 	public static final void runHost(
 		final InetSocketAddress                     targetAddress  ,
-		final ComHostChannelAcceptor<SocketChannel> channelAcceptor
+		final ComHostChannelAcceptor<ComConnection> channelAcceptor
 	)
 	{
-		final ComHost<SocketChannel> host = Host(targetAddress, channelAcceptor);
+		final ComHost<ComConnection> host = Host(targetAddress, channelAcceptor);
 		host.run();
 	}
 	
-	public static final ComClient<SocketChannel> Client()
+	public static final ComClient<ComConnection> Client()
 	{
 		return Com.Client(
 			DefaultPersistenceAdaptorCreator()
 		);
 	}
 	
-	public static final ComClient<SocketChannel> Client(final int localHostPort)
+	public static final ComClient<ComConnection> Client(final int localHostPort)
 	{
 		return Com.Client(
 			localHostPort                     ,
@@ -273,7 +274,7 @@ public class ComBinary
 		);
 	}
 		
-	public static final ComClient<SocketChannel> Client(
+	public static final ComClient<ComConnection> Client(
 		final InetSocketAddress targetAddress
 	)
 	{
@@ -284,14 +285,14 @@ public class ComBinary
 	}
 	
 	
-	public static final ComClientChannel<SocketChannel> connect()
+	public static final ComClientChannel<ComConnection> connect()
 	{
 		return Client()
 			.connect()
 		;
 	}
 	
-	public static final ComClientChannel<SocketChannel> connect(
+	public static final ComClientChannel<ComConnection> connect(
 		final int localHostPort
 	)
 	{
@@ -300,7 +301,7 @@ public class ComBinary
 		;
 	}
 		
-	public static final ComClientChannel<SocketChannel> connect(
+	public static final ComClientChannel<ComConnection> connect(
 		final InetSocketAddress targetAddress
 	)
 	{

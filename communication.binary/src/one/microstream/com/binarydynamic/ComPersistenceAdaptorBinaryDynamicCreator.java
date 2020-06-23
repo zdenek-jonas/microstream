@@ -1,16 +1,16 @@
 package one.microstream.com.binarydynamic;
 
 import java.nio.ByteOrder;
-import java.nio.channels.SocketChannel;
 
 import one.microstream.collections.types.XGettingEnum;
+import one.microstream.com.ComConnection;
 import one.microstream.com.ComPersistenceAdaptor;
 import one.microstream.com.binary.ComPersistenceAdaptorBinary;
 import one.microstream.persistence.binary.types.BinaryPersistenceFoundation;
 import one.microstream.persistence.types.PersistenceIdStrategy;
 import one.microstream.util.BufferSizeProvider;
 
-public final class ComPersistenceAdaptorBinaryDynamicCreator extends ComPersistenceAdaptorBinary.Creator.Abstract<SocketChannel>
+public final class ComPersistenceAdaptorBinaryDynamicCreator extends ComPersistenceAdaptorBinary.Creator.Abstract<ComConnection>
 {
 	///////////////////////////////////////////////////////////////////////////
 	// instance fields //
@@ -33,7 +33,7 @@ public final class ComPersistenceAdaptorBinaryDynamicCreator extends ComPersiste
 	////////////
 
 	@Override
-	public ComPersistenceAdaptor<SocketChannel> createPersistenceAdaptor(
+	public ComPersistenceAdaptor<ComConnection> createPersistenceAdaptor(
 		final PersistenceIdStrategy  hostIdStrategyInitialization,
 		final XGettingEnum<Class<?>> entityTypes                 ,
 		final ByteOrder              hostByteOrder               ,

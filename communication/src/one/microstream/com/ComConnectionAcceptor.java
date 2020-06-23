@@ -2,6 +2,8 @@ package one.microstream.com;
 
 import static one.microstream.X.notNull;
 
+import one.microstream.meta.XDebug;
+
 
 /**
  * Logic to greet/authenticate the client, exchange metadata, create a {@link ComChannel} instance.
@@ -98,10 +100,18 @@ public interface ComConnectionAcceptor<C>
 			// note: things like authentication could be done here in a wrapping implementation.
 			
 			final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
-			this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
 			
+			try
+			{
+				this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
+			}
+			catch(final Throwable e)
+			{
+				XDebug.println("Protokoll exchange failed: \n" + e);
+			}
+				
 			final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
-			
+							
 			try
 			{
 				this.channelAcceptor.acceptChannel(channel);
@@ -110,6 +120,7 @@ public interface ComConnectionAcceptor<C>
 			{
 				this.channelExceptionHandler.handleException(e, channel);
 			}
+
 		}
 		
 	}

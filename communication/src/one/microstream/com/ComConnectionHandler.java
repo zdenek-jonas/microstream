@@ -5,9 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import one.microstream.memory.XMemory;
 import one.microstream.chars.XChars;
 import one.microstream.chars._charArrayRange;
+import one.microstream.memory.XMemory;
 
 public interface ComConnectionHandler<C>
 {
@@ -55,13 +55,13 @@ public interface ComConnectionHandler<C>
 		return new ComConnectionHandler.Default();
 	}
 	
-	public final class Default implements ComConnectionHandler<SocketChannel>
+	public final class Default implements ComConnectionHandler<ComConnection>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// instance fields //
 		////////////////////
 		
-		final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
+		private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
 				
 		
 		
@@ -81,7 +81,7 @@ public interface ComConnectionHandler<C>
 		////////////
 		
 		@Override
-		public ComConnectionListener<SocketChannel> createConnectionListener(
+		public ComConnectionListener<ComConnection> createConnectionListener(
 			final InetSocketAddress address
 		)
 		{
@@ -91,31 +91,33 @@ public interface ComConnectionHandler<C>
 		}
 		
 		@Override
-		public SocketChannel openConnection(final InetSocketAddress address)
+		public ComConnection openConnection(final InetSocketAddress address)
 		{
-			return XSockets.openChannel(address);
+			final SocketChannel clientChannel = XSockets.openChannel(address);
+			
+			return new ComConnection.Default(clientChannel);
 		}
 
 		@Override
-		public void prepareReading(final SocketChannel connection)
-		{
-			// no preparation needed for SocketChannel instances
-		}
-
-		@Override
-		public void prepareWriting(final SocketChannel connection)
+		public void prepareReading(final ComConnection connection)
 		{
 			// no preparation needed for SocketChannel instances
 		}
 
 		@Override
-		public void close(final SocketChannel connection)
+		public void prepareWriting(final ComConnection connection)
 		{
-			XSockets.closeChannel(connection);
+			// no preparation needed for SocketChannel instances
 		}
 
 		@Override
-		public void closeReading(final SocketChannel connection)
+		public void close(final ComConnection connection)
+		{
+			connection.close();
+		}
+
+		@Override
+		public void closeReading(final ComConnection connection)
 		{
 			// (17.11.2018 TM)TODO: SocketChannel#shutdownInput ?
 			
@@ -124,7 +126,7 @@ public interface ComConnectionHandler<C>
 		}
 
 		@Override
-		public void closeWriting(final SocketChannel connection)
+		public void closeWriting(final ComConnection connection)
 		{
 			// (17.11.2018 TM)TODO: SocketChannel#shutdownOutput ?
 			
@@ -133,20 +135,20 @@ public interface ComConnectionHandler<C>
 		}
 
 		@Override
-		public void read(final SocketChannel connction, final ByteBuffer buffer)
+		public void read(final ComConnection connection, final ByteBuffer buffer)
 		{
-			XSockets.readCompletely(connction, buffer);
+			connection.readCompletely(buffer);
 		}
 
 		@Override
-		public void write(final SocketChannel connction, final ByteBuffer buffer)
+		public void write(final ComConnection connection, final ByteBuffer buffer)
 		{
-			XSockets.writeCompletely(connction, buffer);
+			connection.writeCompletely(buffer);
 		}
 		
 		@Override
 		public void sendProtocol(
-			final SocketChannel              connection     ,
+			final ComConnection              connection     ,
 			final ComProtocol                protocol       ,
 			final ComProtocolStringConverter stringConverter
 		)
@@ -162,7 +164,7 @@ public interface ComConnectionHandler<C>
 		
 		@Override
 		public ComProtocol receiveProtocol(
-			final SocketChannel              connection     ,
+			final ComConnection              connection     ,
 			final ComProtocolStringConverter stringConverter
 		)
 		{
