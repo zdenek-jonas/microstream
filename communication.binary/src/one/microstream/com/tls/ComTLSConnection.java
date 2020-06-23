@@ -387,7 +387,6 @@ public class ComTLSConnection implements ComConnection
 		if(this.sslEncryptedIn.position() > 0)
 		{
 			this.sslEncryptedIn.flip();
-			//this.sslDecrypted.clear();
 			final SSLEngineResult result = this.unwrapData();
 			
 			XDebug.println("Wrap status: " + result.getStatus());
@@ -405,6 +404,10 @@ public class ComTLSConnection implements ComConnection
 				this.sslEncryptedIn.limit(this.sslEncryptedIn.capacity());
 			}
 			
+			if(result.getStatus() == Status.CLOSED)
+			{
+				this.close();
+			}
 		}
 							
 		if(needMoreData)
@@ -441,104 +444,6 @@ public class ComTLSConnection implements ComConnection
 		this.sslDecrypted.compact();
 		
 	}
-
-
-	
-//	@Override
-//	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
-//	{
-//		XDebug.println("++");
-//		XDebug.println("Start read bytes: " + length);
-//
-//		if(!this.channel.isOpen())
-//		{
-//			throw new ComException("Can not read from closed channel!");
-//		}
-//
-//		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
-//
-//
-//		while(outBuffer.position() < length)
-//		{
-//			if(this.sslDecrypted.position() == 0)
-//			{
-//				XDebug.println("read no allready decrypted data available, reading data ... ");
-//
-//				if(this.sslEnryptedIn.position() == 0)
-//				{
-//					XDebug.println("calling readCompletely ... ");
-//					//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-//
-//					this.readInternal(this.channel, this.sslEnryptedIn);
-//
-//				}
-//
-//				this.sslDecrypted.clear();
-//				this.sslEnryptedIn.flip();
-//
-//				final SSLEngineResult result = this.unwrapData();
-//
-//				if(result.getStatus() == Status.BUFFER_UNDERFLOW)
-//				{
-//					XDebug.println("BUFFER_UNDERFLOW");
-//
-//					if(this.sslEnryptedIn.hasRemaining())
-//					{
-//						this.sslEnryptedIn.position(this.sslEnryptedIn.limit());
-//						this.sslEnryptedIn.limit(this.sslEnryptedIn.capacity());
-//
-//						//XSockets.readCompletely(this.channel, this.sslDecryptBuffer);
-//						this.readInternal(this.channel, this.sslEnryptedIn);
-//						continue;
-//					}
-//
-//					//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
-//					try
-//					{
-//						Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
-//					}
-//					catch (final InterruptedException e)
-//					{
-//						throw new ComException(e);
-//					}
-//				}
-//
-//				this.sslDecrypted.flip();
-//				XDebug.println("unwrap result  : " + result.getStatus());
-//				XDebug.println("unwrap consumed: " + result.bytesConsumed());
-//				XDebug.println("unwrap bytes produced: " + result.bytesProduced());
-//
-//				this.sslEnryptedIn.compact();
-//				//XDebug.printBufferStats(this.sslDecryptBuffer, "sslDecryptBuffer after compact");
-//
-//
-//			}
-//
-//			final int numBytes = Math.min(length, this.sslDecrypted.limit());
-//
-//			try
-//			{
-//				outBuffer.put(this.sslDecrypted.array(), 0, numBytes);
-//			}
-//			catch(final IndexOutOfBoundsException | BufferOverflowException e)
-//			{
-//				throw new ComException("faild to copy to out buffer", e);
-//			}
-//
-//			final int newLimit = this.sslDecrypted.limit() - numBytes;
-//			this.sslDecrypted.position(numBytes);
-//			this.sslDecrypted.compact();
-//			this.sslDecrypted.limit(newLimit);
-//
-//			//XDebug.printBufferStats(this.sslDecryptedBuffer, "sslDecryptedBuffer after compact");
-//		}
-//
-//		XDebug.println("--");
-//
-//		return outBuffer;
-//
-//	}
-	
 
 	private void readInternal(final SocketChannel channel, final ByteBuffer buffer)
 	{
@@ -594,34 +499,6 @@ public class ComTLSConnection implements ComConnection
 		catch (final SSLException e)
 		{
 			throw new ComException("failed to decypt buffer", e);
-		}
-	}
-	
-	/**
-	 * Try to read more data from the network if the input buffer is not empty
-	 * This is the case if the last sslPackets was incomplete.
-	 * in that case a decryption should be done again after the read.
-	 * 
-	 * If the input buffer is empty wait a short moment and retry
-	 * 
-	 */
-	private void readAfterUnderflow()
-	{
-		if(this.sslEncryptedIn.hasRemaining())
-		{
-			this.sslEncryptedIn.position(this.sslEncryptedIn.limit());
-			this.sslEncryptedIn.limit(this.sslEncryptedIn.capacity());
-			this.readInternal(this.channel, this.sslEncryptedIn);
-		}
-		
-		//Sleep some ms before retry. This is only relevant if the SocketCannel is in non-blocking mode
-		try
-		{
-			Thread.sleep(SSL_BUFFER_UNDERFLOW_RETRY_DELAY);
-		}
-		catch (final InterruptedException e)
-		{
-			throw new ComException(e);
 		}
 	}
 }
