@@ -27,15 +27,19 @@ import one.microstream.meta.XDebug;
 public class ComTLSConnection implements ComConnection
 {
 	///////////////////////////////////////////////////////////////////////////
-	// instance fields //
-	////////////////////
+	// constants //
+	//////////////
 	
 	/**
-	 * Delay in case of an SSL unwrap buffer underflow in ms
+	 * Timeout for blocking read operations during TLS handshake
 	 */
-	private static final int SSL_HANDSHAKE_READ_TIMEOUT       = 1000;
+	private static final int SSL_HANDSHAKE_READ_TIMEOUT  = 1000;
+
 	
-	
+	///////////////////////////////////////////////////////////////////////////
+	// instance fields //
+	////////////////////
+		
 	private final SocketChannel channel;
 	private final SSLEngine		sslEngine;
 
@@ -447,6 +451,14 @@ public class ComTLSConnection implements ComConnection
 		
 	}
 
+	/**
+	 * 
+	 * Read from the channel into buffer
+	 * throws a ComException if the channel reached the end of stream
+	 * 
+	 * @param channel
+	 * @param buffer
+	 */
 	private void readInternal(final SocketChannel channel, final ByteBuffer buffer)
 	{
 		final int bytesRead;
@@ -492,6 +504,11 @@ public class ComTLSConnection implements ComConnection
 		return outBuffer;
 	}
 	
+	/**
+	 * Unwrap data from the encrypted input buffer into the decrypted data buffer
+	 * 
+	 * @return SSLEngineResult
+	 */
 	private SSLEngineResult unwrapData()
 	{
 		try

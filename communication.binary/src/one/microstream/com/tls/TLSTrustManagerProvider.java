@@ -17,18 +17,49 @@ public interface TLSTrustManagerProvider
 {
 	TrustManager[] get();
 	
+	/**
+	 * uses system default trust manager
+	 */
 	public class Default implements TLSTrustManagerProvider
 	{
+		///////////////////////////////////////////////////////////////////////////
+		// constructors //
+		/////////////////
+	
+		public Default()
+		{
+			super();
+		}
+		
+		
+		///////////////////////////////////////////////////////////////////////////
+		// methods //
+		////////////
+		
 		@Override
-		public TrustManager[] get() {
-			// TODO Auto-generated method stub
+		public TrustManager[] get()
+		{
 			return null;
 		}
 	}
 	
+	/**
+	 * 
+	 * Provide a PKCS12 TrustManager
+	 *
+	 */
 	public class PKCS12 implements TLSTrustManagerProvider
 	{
+		///////////////////////////////////////////////////////////////////////////
+		// instance fields //
+		////////////////////
+		
 		private final TrustManagerFactory trustManagerFactory;
+		
+		
+		///////////////////////////////////////////////////////////////////////////
+		// constructors //
+		/////////////////
 		
 		public PKCS12(final Path path, final char[] password)
 		{
@@ -65,6 +96,11 @@ public interface TLSTrustManagerProvider
 			}
 		}
 
+		
+		///////////////////////////////////////////////////////////////////////////
+		// methods //
+		////////////
+		
 		@Override
 		public TrustManager[] get()
 		{

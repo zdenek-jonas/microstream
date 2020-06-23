@@ -25,13 +25,18 @@ import one.microstream.meta.XDebug;
 public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection>
 {
 	///////////////////////////////////////////////////////////////////////////
+	// constants //
+	//////////////
+	
+	private final static boolean TLS_CLIENT_MODE = true;
+	
+	
+	///////////////////////////////////////////////////////////////////////////
 	// instance fields //
 	////////////////////
 	
 	private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
-	
-	private final static boolean TLS_CLIENT_MODE = true;
-		
+			
 	private final SSLContext context;
 	
 	private final TLSKeyManagerProvider   keyManagerProvider;

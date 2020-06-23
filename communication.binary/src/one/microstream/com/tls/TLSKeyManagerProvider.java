@@ -18,16 +18,24 @@ public interface TLSKeyManagerProvider
 {
 	KeyManager[] get();
 	
-	/*
-	 * use system default key manager
+	/**
+	 * uses system default key manager
 	 */
 	public class Default implements TLSKeyManagerProvider
 	{
+		///////////////////////////////////////////////////////////////////////////
+		// constructors //
+		/////////////////
+		
 		public Default()
 		{
 			super();
 		}
 
+		///////////////////////////////////////////////////////////////////////////
+		// methods //
+		////////////
+		
 		@Override
 		public KeyManager[] get()
 		{
@@ -35,9 +43,22 @@ public interface TLSKeyManagerProvider
 		}
 	}
 	
+	/**
+	 * 
+	 * Provide a PKCS12 KeyManger
+	 *
+	 */
 	public class PKCS12 implements TLSKeyManagerProvider
 	{
+		///////////////////////////////////////////////////////////////////////////
+		// instance fields //
+		////////////////////
+		
 		private final KeyManagerFactory keyManagerFactory;
+		
+		///////////////////////////////////////////////////////////////////////////
+		// constructors //
+		/////////////////
 		
 		public PKCS12(final Path path, final char[] password)
 		{
@@ -74,6 +95,11 @@ public interface TLSKeyManagerProvider
 			}
 		}
 
+		
+		///////////////////////////////////////////////////////////////////////////
+		// methods //
+		////////////
+		
 		@Override
 		public KeyManager[] get()
 		{

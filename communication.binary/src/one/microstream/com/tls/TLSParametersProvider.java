@@ -25,7 +25,26 @@ public interface TLSParametersProvider
 	 */
 	public final class Default implements TLSParametersProvider
 	{
-		private final String tlsProtocol = "TLSv1.2";
+		///////////////////////////////////////////////////////////////////////////
+		// constants //
+		//////////////
+		
+		private static final String TLS_PROTOCOL_STRING = "TLSv1.2";
+		
+		
+		///////////////////////////////////////////////////////////////////////////
+		// constructors //
+		/////////////////
+		
+		public Default()
+		{
+			super();
+		}
+		
+		
+		///////////////////////////////////////////////////////////////////////////
+		// methods //
+		////////////
 		
 		@Override
 		public SSLParameters getSSLParameters()
@@ -35,11 +54,11 @@ public interface TLSParametersProvider
 						
 			return sslParameters;
 		}
-
+		
 		@Override
 		public String getSSLProtocol()
 		{
-			return this.tlsProtocol;
+			return Default.TLS_PROTOCOL_STRING;
 		}
 		
 	}
