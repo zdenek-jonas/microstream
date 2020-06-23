@@ -92,6 +92,131 @@ public class ComTLSConnection implements ComConnection
 	// methods //
 	////////////
 	
+	@Override
+	public void readCompletely(final ByteBuffer outBuffer)
+	{
+		this.read(outBuffer, 1000, outBuffer.capacity());
+	}
+	
+	@Override
+	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
+	{
+		XDebug.println("++");
+		XDebug.println("Start read bytes: " + length);
+		
+		if(!this.channel.isOpen())
+		{
+			throw new ComException("Can not read from closed channel!");
+		}
+		
+		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
+		
+		while(outBuffer.position() < length)
+		{
+			if(this.sslDecrypted.position() == 0)
+			{
+				this.decryptPackage();
+			}
+			else
+			{
+				this.appendDecrypedData(outBuffer, length);
+			}
+		}
+			
+		return outBuffer;
+	}
+	
+	@Override
+	public void close()
+	{
+		XDebug.println("++");
+		//this zero sized buffer is needed for the SSLEngine to create the closing messages
+		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
+		SSLEngineResult result;
+				
+		this.sslEngine.closeOutbound();
+		
+		while(!this.sslEngine.isOutboundDone())
+		{
+			this.sslEncyptedOut.clear();
+			try
+			{
+				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptedOut);
+			}
+			catch (final SSLException e)
+			{
+				throw new ComException("failed to encypt buffer", e);
+			}
+			
+			XDebug.println("Close wrap status: " + result.getStatus());
+			
+			if(result.getStatus() == Status.OK)
+			{
+				XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
+			}
+			
+			this.sslEncyptedOut.compact();
+		}
+		
+		XDebug.println("Closing channel");
+		XSockets.closeChannel(this.channel);
+	}
+
+	@Override
+	public void writeCompletely(final ByteBuffer buffer)
+	{
+		this.write(buffer, 0);
+	}
+
+
+	@Override
+	public void write(final ByteBuffer buffer, final int timeout)
+	{
+		XDebug.println("++");
+		XDebug.println("Start writing bytes: " + buffer.limit());
+		
+		if(!this.channel.isOpen())
+		{
+			throw new ComException("Can not write to closed channel!");
+		}
+		
+		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
+		XDebug.println("max Packet Size: " + maxPacketSize);
+		
+		while(buffer.remaining() > 0)
+		{
+			final SSLEngineResult result;
+			
+			try
+			{
+				result = this.sslEngine.wrap(buffer, this.sslEncyptedOut);
+				this.sslEncyptedOut.flip();
+			}
+			catch (final SSLException e)
+			{
+				throw new ComException("failed to encypt buffer", e);
+			}
+			
+			
+			XDebug.println("wrap result: " + result.getStatus());
+			switch(result.getStatus())
+			{
+				case BUFFER_OVERFLOW:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case BUFFER_UNDERFLOW:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case CLOSED:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+				case OK:
+					XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
+					break;
+				default:
+					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
+			}
+					
+			this.sslEncyptedOut.clear();
+		}
+	}
 	
 	private synchronized void read(final SocketChannel channel, final ByteBuffer buffer, final int timeout)
 	{
@@ -250,131 +375,9 @@ public class ComTLSConnection implements ComConnection
 //    	XDebug.println("peerNetData: " + peerNetData.remaining() + " " + peerNetData.position() + " " + peerNetData.limit() );
 	}
 
-	@Override
-	public void close()
-	{
-		XDebug.println("++");
-		//this zero sized buffer is needed for the SSLEngine to create the closing messages
-		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
-		SSLEngineResult result;
-				
-		this.sslEngine.closeOutbound();
-		
-		while(!this.sslEngine.isOutboundDone())
-		{
-			this.sslEncyptedOut.clear();
-			try
-			{
-				result = this.sslEngine.wrap(emptyBuffer, this.sslEncyptedOut);
-			}
-			catch (final SSLException e)
-			{
-				throw new ComException("failed to encypt buffer", e);
-			}
-			
-			XDebug.println("Close wrap status: " + result.getStatus());
-			
-			if(result.getStatus() == Status.OK)
-			{
-				XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
-			}
-			
-			this.sslEncyptedOut.compact();
-		}
-		
-		XDebug.println("Closing channel");
-		XSockets.closeChannel(this.channel);
-	}
-
-	@Override
-	public void writeCompletely(final ByteBuffer buffer)
-	{
-		this.write(buffer, 0);
-	}
-
-
-	@Override
-	public void write(final ByteBuffer buffer, final int timeout)
-	{
-		XDebug.println("++");
-		XDebug.println("Start writing bytes: " + buffer.limit());
-		
-		if(!this.channel.isOpen())
-		{
-			throw new ComException("Can not write to closed channel!");
-		}
-		
-		final int maxPacketSize = this.sslEngine.getSession().getPacketBufferSize();
-		XDebug.println("max Packet Size: " + maxPacketSize);
-		
-		while(buffer.remaining() > 0)
-		{
-			final SSLEngineResult result;
-			
-			try
-			{
-				result = this.sslEngine.wrap(buffer, this.sslEncyptedOut);
-				this.sslEncyptedOut.flip();
-			}
-			catch (final SSLException e)
-			{
-				throw new ComException("failed to encypt buffer", e);
-			}
-			
-			
-			XDebug.println("wrap result: " + result.getStatus());
-			switch(result.getStatus())
-			{
-				case BUFFER_OVERFLOW:
-					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
-				case BUFFER_UNDERFLOW:
-					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
-				case CLOSED:
-					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
-				case OK:
-					XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
-					break;
-				default:
-					throw new ComException("Unexpected sslEngine wrap result: " + result.getStatus());
-			}
-					
-			this.sslEncyptedOut.clear();
-		}
-	}
 	
-	@Override
-	public void readCompletely(final ByteBuffer outBuffer)
-	{
-		this.read(outBuffer, 1000, outBuffer.capacity());
-	}
 	
-	@Override
-	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
-	{
-		XDebug.println("++");
-		XDebug.println("Start read bytes: " + length);
-		
-		if(!this.channel.isOpen())
-		{
-			throw new ComException("Can not read from closed channel!");
-		}
-		
-		final ByteBuffer outBuffer = this.ensureOutBufferSize(defaultBuffer, length);
-		
-		while(outBuffer.position() < length)
-		{
-			if(this.sslDecrypted.position() == 0)
-			{
-				this.decryptPackage();
-			}
-			else
-			{
-				this.appendDecrypedData(outBuffer, length);
-			}
-		}
-			
-		return outBuffer;
-	}
+
 	
 	/**
 	 * read network data and decrypt until one block is done
