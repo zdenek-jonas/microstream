@@ -51,12 +51,12 @@ public class ComTLSConnection implements ComConnection
 	{
 		this.sslHandshakeReadTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
 		
-		this.channel = channel;
+		this.channel   = channel;
 		this.sslEngine = sslContext.createSSLEngine();
 		this.sslEngine.setUseClientMode(clientMode);
 		this.sslEngine.setSSLParameters(tlsParameterProvider.getSSLParameters());
 								
-		this.sslEncryptedIn    = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslEncryptedIn   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslEncyptedOut   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		this.sslDecrypted     = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
 		
@@ -187,7 +187,7 @@ public class ComTLSConnection implements ComConnection
 		}
 	}
 	
-	private synchronized void read(final SocketChannel channel, final ByteBuffer buffer, final int timeout)
+	private synchronized void readHandshakeData(final ByteBuffer buffer)
 	{
 		final ExecutorService executor = Executors.newSingleThreadExecutor();
 				
@@ -196,7 +196,7 @@ public class ComTLSConnection implements ComConnection
 		try
 		{
 			readResult = executor
-				.submit(() -> { return channel.read(buffer); })
+				.submit(() -> { return this.channel.read(buffer); })
 				.get(this.sslHandshakeReadTimeOut, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException | ExecutionException e)
@@ -218,21 +218,21 @@ public class ComTLSConnection implements ComConnection
 		}
 	}
 	
-	private HandshakeStatus unwrapHandshakeData(final ByteBuffer peerNetData, final ByteBuffer peerAppData) throws IOException
+	private HandshakeStatus unwrapHandshakeData() throws IOException
 	{
 		SSLEngineResult.HandshakeStatus hs = this.sslEngine.getHandshakeStatus();
 			 		
-		if(peerNetData.position() == 0)
+		if(this.sslEncryptedIn.position() == 0)
 		{
-			this.read(this.channel, peerNetData, 1000);
+			this.readHandshakeData(this.sslEncryptedIn);
 		}
 		
-		peerNetData.flip();
+		this.sslEncryptedIn.flip();
 				
 		while(hs == HandshakeStatus.NEED_UNWRAP &&
-    		peerNetData.hasRemaining())
+			this.sslEncryptedIn.hasRemaining())
  		{
-	 		final SSLEngineResult engineResult = this.sslEngine.unwrap(peerNetData, peerAppData);
+	 		final SSLEngineResult engineResult = this.sslEngine.unwrap(this.sslEncryptedIn, this.sslDecrypted);
 	 		hs = engineResult.getHandshakeStatus();
 	 			 			 			 			 		 			 		
 	 		final Status status = engineResult.getStatus();
@@ -246,27 +246,27 @@ public class ComTLSConnection implements ComConnection
 	 			
 	 			if(status == Status.BUFFER_UNDERFLOW)
 	 			{
-	 				this.read(this.channel, peerNetData, 1000);
+	 				this.readHandshakeData(this.sslEncryptedIn);
 	 			}
 	 		}
  		}
 		
-		peerNetData.compact();
+		this.sslEncryptedIn.compact();
  		
 		return hs;
 	}
 	
-	private HandshakeStatus wrapHandshakeData(final ByteBuffer appData, final ByteBuffer netData) throws IOException
+	private HandshakeStatus wrapHandshakeData(final ByteBuffer handshakeData) throws IOException
 	{
-		netData.clear();
-		final SSLEngineResult engineResult = this.sslEngine.wrap(appData, netData);
+		this.sslEncyptedOut.clear();
+		final SSLEngineResult engineResult = this.sslEngine.wrap(handshakeData, this.sslEncyptedOut);
 		final SSLEngineResult.HandshakeStatus hs = engineResult.getHandshakeStatus();
 											
 		if(engineResult.getStatus() == SSLEngineResult.Status.OK )
 		{
-			netData.flip();
-			this.channel.write(netData);
-			netData.compact();
+			this.sslEncyptedOut.flip();
+			this.channel.write(this.sslEncyptedOut);
+			this.sslEncyptedOut.compact();
 		}
 		
 		return hs;
@@ -306,11 +306,11 @@ public class ComTLSConnection implements ComConnection
 			switch (hs)
 	    	{
 	        	case NEED_UNWRAP:
-	        		hs = this.unwrapHandshakeData(this.sslEncryptedIn, this.sslDecrypted);
+	        		hs = this.unwrapHandshakeData();
 	        		break;
 	        		
 	        	case NEED_WRAP :
-	        		hs = this.wrapHandshakeData(handshakeData, this.sslEncyptedOut);
+	        		hs = this.wrapHandshakeData(handshakeData);
 	        		break;
 	        		
 	        	case NEED_TASK :
@@ -355,7 +355,7 @@ public class ComTLSConnection implements ComConnection
 							
 		if(needMoreData)
 		{
-			this.readInternal(this.channel, this.sslEncryptedIn);
+			this.readInternal();
 		}
 	}
 
@@ -393,13 +393,13 @@ public class ComTLSConnection implements ComConnection
 	 * @param channel
 	 * @param buffer
 	 */
-	private void readInternal(final SocketChannel channel, final ByteBuffer buffer)
+	private void readInternal()
 	{
 		final int bytesRead;
 		
 		try
 		{
-			bytesRead = channel.read(buffer);
+			bytesRead = this.channel.read(this.sslEncryptedIn);
 		}
 		catch (final IOException e)
 		{
