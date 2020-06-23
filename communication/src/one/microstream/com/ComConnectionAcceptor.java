@@ -99,25 +99,28 @@ public interface ComConnectionAcceptor<C>
 		{
 			// note: things like authentication could be done here in a wrapping implementation.
 			
+			final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
+			
 			try
 			{
-				final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
 				this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
-				final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
-								
-				try
-				{
-					this.channelAcceptor.acceptChannel(channel);
-				}
-				catch(final Throwable e)
-				{
-					this.channelExceptionHandler.handleException(e, channel);
-				}
 			}
 			catch(final Throwable e)
 			{
 				XDebug.println("Protokoll exchange failed: \n" + e);
 			}
+				
+			final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
+							
+			try
+			{
+				this.channelAcceptor.acceptChannel(channel);
+			}
+			catch(final Throwable e)
+			{
+				this.channelExceptionHandler.handleException(e, channel);
+			}
+
 		}
 		
 	}
