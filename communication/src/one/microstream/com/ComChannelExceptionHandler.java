@@ -15,6 +15,7 @@ public interface ComChannelExceptionHandler
 		}
 		else
 		{
+			channel.close();
 			throw new ComException(exception);
 		}
 	}
