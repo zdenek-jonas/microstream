@@ -11,7 +11,7 @@ public interface ComConnectionListener<C>
 	
 	public void close();
 	
-	
+	public boolean isAlive();
 	
 	public static ComConnectionListener.Default Default(final ServerSocketChannel serverSocketChannel)
 	{
@@ -58,7 +58,15 @@ public interface ComConnectionListener<C>
 		{
 			XSockets.closeChannel(this.serverSocketChannel);
 		}
+
+		@Override
+		public boolean isAlive()
+		{
+			return this.serverSocketChannel.isOpen();
+		}
 		
 	}
+
+	
 	
 }

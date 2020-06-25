@@ -52,4 +52,10 @@ public class ComTLSConnectionListener implements ComConnectionListener<ComConnec
 	{
 		XSockets.closeChannel(this.serverSocketChannel);
 	}
+
+	@Override
+	public boolean isAlive()
+	{
+		return this.serverSocketChannel.isOpen();
+	}
 }

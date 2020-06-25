@@ -133,7 +133,13 @@ public interface ComHost<C> extends Runnable
 		@Override
 		public synchronized boolean isListening()
 		{
-			return this.liveConnectionListener != null;
+			
+			if(this.liveConnectionListener != null)
+			{
+				return this.liveConnectionListener.isAlive();
+			}
+			
+			return false;
 		}
 
 		@Override
