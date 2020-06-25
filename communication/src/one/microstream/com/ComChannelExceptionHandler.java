@@ -1,23 +1,14 @@
 package one.microstream.com;
 
-import one.microstream.persistence.exceptions.PersistenceExceptionTransfer;
-
 public interface ComChannelExceptionHandler
 {
 	public void handleException(Throwable exception, ComChannel channel);
 	
 	public static void defaultHandleException(final Throwable exception, final ComChannel channel)
 	{
-		if(exception instanceof PersistenceExceptionTransfer
-			|| exception instanceof ComException)
-		{
+
 			channel.close();
-		}
-		else
-		{
-			channel.close();
-			throw new ComException(exception);
-		}
+
 	}
 	
 	public static ComChannelExceptionHandler New()
