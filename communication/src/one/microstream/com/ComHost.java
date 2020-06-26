@@ -117,7 +117,7 @@ public interface ComHost<C> extends Runnable
 		}
 		
 		@Override
-		public synchronized void stop()
+		public void stop()
 		{
 			this.stopped = true;
 			
