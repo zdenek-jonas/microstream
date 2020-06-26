@@ -238,14 +238,20 @@ public final class XSockets
 	
 	public static void read(final SocketChannel channel, final ByteBuffer buffer) throws ComException
 	{
+		final int numBytesRead;
 		try
 		{
-			channel.read(buffer);
+			numBytesRead = channel.read(buffer);
 		}
 		catch(final IOException e)
 		{
 			// (01.11.2018 TM)EXCP: proper exception
 			throw new ComException(e);
+		}
+		
+		if(numBytesRead < 0 )
+		{
+			throw new ComException("channel reached end of stream");
 		}
 	}
 	
