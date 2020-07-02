@@ -56,6 +56,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	//Custom handler for channel errors
 	public ComChannelExceptionHandler getChannelExceptionHandler();
 	
+	public ComPeerIdentifier getPeerIdentifier();
+	
 	// the port applies to host and client alike, that's what using a common channel is all about.
 	public int getPort();
 	
@@ -144,7 +146,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		
 		private String                          protocolName             ;
 		private String                          protocolVersion          ;
-		private ByteOrder                       hostByteOrder                ;
+		private ByteOrder                       hostByteOrder            ;
 		private PersistenceIdStrategy           clientIdStrategy         ;
 		private ComProtocolCreator              protocolCreator          ;
 		private ComProtocolProvider<C>          protocolProvider         ;
@@ -167,7 +169,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		
 		private ComClientCreator<C>             clientCreator            ;
 		private ComConnectionLogicDispatcher<C> connectionLogicDispatcher;
-		private ComChannelExceptionHandler      channelExceptionHandler;
+		private ComChannelExceptionHandler      channelExceptionHandler  ;
+		private ComPeerIdentifier               peerIdentifier           ;
 
 		
 		
@@ -455,12 +458,28 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 			
 			return this.channelExceptionHandler;
 		}
+		
+		@Override
+		public ComPeerIdentifier getPeerIdentifier()
+		{
+			if(this.peerIdentifier == null)
+			{
+				this.peerIdentifier = this.ensurePeerIdentifier();
+			}
+			
+			return this.peerIdentifier;
+		}
 
 		/*
 		 * "ensure" methods guarantee that a non-null/non-zero value is returned.
 		 * Either by returning an existing one (e.g. a constant) or by creating a new instance of the specified type.
 		 * If both options are not possible, the method will throw a MissingFoundationPartException.
 		 */
+	
+		protected ComPeerIdentifier ensurePeerIdentifier()
+		{
+			return ComPeerIdentifier.New();
+		}
 
 		protected String ensureProtocolName()
 		{
@@ -818,7 +837,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 				this.getConnectionHandler()         ,
 				this.getHostPersistenceAdaptor()    ,
 				this.getHostChannelAcceptor()       ,
-				this.getChannelExceptionHandler()
+				this.getChannelExceptionHandler()   ,
+				this.getPeerIdentifier()
 			);
 
 			final ComHostCreator<C> hostCreator = this.getHostCreator();
@@ -828,7 +848,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 				connectionAcceptor
 			);
 		}
-		
+				
 		@Override
 		public ComClient<C> createClient()
 		{

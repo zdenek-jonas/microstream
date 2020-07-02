@@ -10,6 +10,9 @@ public interface ComConnection
 	public void writeCompletely(ByteBuffer buffer);
 	public ByteBuffer read(ByteBuffer buffer, int timeout, int length);
 	public void write(ByteBuffer buffer, int timeout);
+	public void readUnsecure(final ByteBuffer buffer);
+	public void writeUnsecured(ByteBuffer buffer);
+	public void enableSecurity();
 	
 	public class Default implements ComConnection
 	{
@@ -49,6 +52,24 @@ public interface ComConnection
 		public void write(final ByteBuffer buffer, final int timeout)
 		{
 			XSockets.writeFromBuffer(this.channel, buffer, timeout);
+		}
+
+		@Override
+		public void enableSecurity()
+		{
+			//nothing to do, default connection is not encrypted;
+		}
+
+		@Override
+		public void readUnsecure(final ByteBuffer buffer)
+		{
+			XSockets.readCompletely(this.channel, buffer);
+		}
+		
+		@Override
+		public void writeUnsecured(final ByteBuffer buffer)
+		{
+			XSockets.writeCompletely(this.channel, buffer);
 		}
 		
 	}

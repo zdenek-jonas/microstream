@@ -42,7 +42,7 @@ public interface ComClient<C>
 		private final ComConnectionHandler<C>    connectionHandler ;
 		private final ComProtocolStringConverter protocolParser    ;
 		private final ComPersistenceAdaptor<C>   persistenceAdaptor;
-		
+		private final ComPeerIdentifier          peerIdentifier = ComPeerIdentifier.New();
 		
 		
 		///////////////////////////////////////////////////////////////////////////
@@ -79,6 +79,10 @@ public interface ComClient<C>
 		public ComClientChannel<C> connect() throws ComException
 		{
 			final C                   conn     = this.connectionHandler.openConnection(this.hostAddress);
+			
+			this.connectionHandler.sendClientIdentifer(conn, this.peerIdentifier.getBuffer());
+			this.connectionHandler.enableSecurity(conn);
+			
 			final ComProtocol         protocol = this.connectionHandler.receiveProtocol(conn, this.protocolParser);
 			final ComClientChannel<C> channel  = this.persistenceAdaptor.createClientChannel(conn, protocol, this);
 			

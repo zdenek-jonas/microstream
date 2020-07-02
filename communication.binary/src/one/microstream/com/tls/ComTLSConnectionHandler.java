@@ -9,19 +9,13 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
 
-import one.microstream.chars.XChars;
-import one.microstream.chars._charArrayRange;
-import one.microstream.com.Com;
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComConnectionHandler;
 import one.microstream.com.ComConnectionListener;
 import one.microstream.com.ComException;
-import one.microstream.com.ComProtocol;
-import one.microstream.com.ComProtocolStringConverter;
 import one.microstream.com.XSockets;
-import one.microstream.memory.XMemory;
 
-public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnection>
+public class ComTLSConnectionHandler extends ComConnectionHandler.Default
 {
 	///////////////////////////////////////////////////////////////////////////
 	// constants //
@@ -34,8 +28,6 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	// instance fields //
 	////////////////////
 	
-	private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
-			
 	private final SSLContext context;
 	
 	private final TLSKeyManagerProvider   keyManagerProvider;
@@ -98,98 +90,35 @@ public class ComTLSConnectionHandler implements ComConnectionHandler<ComConnecti
 	////////////
 	
 	@Override
-	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address)
-	{
+	public ComConnectionListener<ComConnection> createConnectionListener(final InetSocketAddress address) 
+        {		
 		final ServerSocketChannel serverSocketChannel = XSockets.openServerSocketChannel(address);
 		return new ComTLSConnectionListener(serverSocketChannel, this.context, this.tlsParameterProvider);
 	}
 
 
 	@Override
-	public ComTLSConnection openConnection(final InetSocketAddress address)
-	{
+	public ComTLSConnection openConnection(final InetSocketAddress address) 
+        {
 		final SocketChannel clientChannel = XSockets.openChannel(address);
 		return new ComTLSConnection(clientChannel, this.context, this.tlsParameterProvider, TLS_CLIENT_MODE);
 	}
 
 	@Override
-	public void prepareReading(final ComConnection connection)
+	public void sendClientIdentifer(final ComConnection connection, final ByteBuffer buffer)
 	{
-		// no action required
+		connection.writeUnsecured(buffer);
+	}
+	
+	@Override
+	public void receiveClientIdentifer(final ComConnection connection, final ByteBuffer buffer)
+	{
+		connection.readUnsecure(buffer);
 	}
 
 	@Override
-	public void prepareWriting(final ComConnection connection)
+	public void enableSecurity(final ComConnection connection)
 	{
-		// no action required
+		connection.enableSecurity();
 	}
-
-	@Override
-	public void close(final ComConnection connection)
-	{
-		connection.close();
-	}
-
-	@Override
-	public void closeReading(final ComConnection connection)
-	{
-		//closing read only not supported
-		connection.close();
-	}
-
-	@Override
-	public void closeWriting(final ComConnection connection)
-	{
-		//closing write only not supported
-		connection.close();
-	}
-
-	@Override
-	public void read(final ComConnection connection, final ByteBuffer buffer)
-	{
-		connection.readCompletely(buffer);
-
-	}
-
-	@Override
-	public void write(final ComConnection connection, final ByteBuffer buffer)
-	{
-		connection.writeCompletely(buffer);
-	}
-
-	@Override
-	public void sendProtocol(final ComConnection connection, final ComProtocol protocol,
-			final ComProtocolStringConverter stringConverter)
-	{
-		final ByteBuffer bufferedProtocol = Com.bufferProtocol(
-				protocol                     ,
-				stringConverter              ,
-				this.protocolLengthDigitCount
-			);
-
-		this.write(connection, bufferedProtocol);
-	}
-
-	@Override
-	public ComProtocol receiveProtocol(final ComConnection connection, final ComProtocolStringConverter stringConverter)
-	{
-		final ByteBuffer lengthBuffer = XMemory.allocateDirectNative(this.protocolLengthDigitCount);
-		this.read(connection, lengthBuffer);
-				
-		// buffer position must be reset for the decoder to see the bytes
-		lengthBuffer.position(0);
-		final String lengthDigits = XChars.standardCharset().decode(lengthBuffer).toString();
-		final int    length       = Integer.parseInt(lengthDigits);
-		
-		final ByteBuffer protocolBuffer = XMemory.allocateDirectNative(length - this.protocolLengthDigitCount);
-		this.read(connection, protocolBuffer);
-		
-		// buffer position must be reset to after the separator for the decoder to see the bytes
-		protocolBuffer.position(1);
-		final char[] protocolChars = XChars.standardCharset().decode(protocolBuffer).array();
-		
-		return stringConverter.parse(_charArrayRange.New(protocolChars));
-	}
-
-
 }

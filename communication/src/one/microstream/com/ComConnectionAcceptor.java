@@ -2,7 +2,7 @@ package one.microstream.com;
 
 import static one.microstream.X.notNull;
 
-import one.microstream.meta.XDebug;
+import java.nio.ByteBuffer;
 
 
 /**
@@ -31,7 +31,8 @@ public interface ComConnectionAcceptor<C>
 		final ComConnectionHandler<C>       connectionHandler      ,
 		final ComPersistenceAdaptor<C>      persistenceAdaptor     ,
 		final ComHostChannelAcceptor<C>     channelAcceptor		   ,
-		final ComChannelExceptionHandler    exceptionHandler
+		final ComChannelExceptionHandler    exceptionHandler       ,
+		final ComPeerIdentifier             peerIdentifier
 	)
 	{
 		
@@ -41,7 +42,8 @@ public interface ComConnectionAcceptor<C>
 			notNull(connectionHandler)      ,
 			notNull(persistenceAdaptor)     ,
 			notNull(channelAcceptor)        ,
-			notNull(exceptionHandler)
+			notNull(exceptionHandler)       ,
+			notNull(peerIdentifier)
 		);
 	}
 	
@@ -57,7 +59,7 @@ public interface ComConnectionAcceptor<C>
 		private final ComPersistenceAdaptor<C>   persistenceAdaptor     ;
 		private final ComHostChannelAcceptor<C>  channelAcceptor        ;
 		private final ComChannelExceptionHandler channelExceptionHandler;
-				
+		private final ComPeerIdentifier			 peerIdentifier         ;
 		
 		
 		///////////////////////////////////////////////////////////////////////////
@@ -70,7 +72,8 @@ public interface ComConnectionAcceptor<C>
 			final ComConnectionHandler<C>    connectionHandler      ,
 			final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
 			final ComHostChannelAcceptor<C>  channelAcceptor        ,
-			final ComChannelExceptionHandler exceptionHandler
+			final ComChannelExceptionHandler exceptionHandler		,
+			final ComPeerIdentifier			 peerIdentifier
 		)
 		{
 			super();
@@ -80,6 +83,7 @@ public interface ComConnectionAcceptor<C>
 			this.persistenceAdaptor      = persistenceAdaptor     ;
 			this.channelAcceptor         = channelAcceptor        ;
 			this.channelExceptionHandler = exceptionHandler       ;
+			this.peerIdentifier          = peerIdentifier         ;
 		}
 		
 		
@@ -98,28 +102,47 @@ public interface ComConnectionAcceptor<C>
 		public final void acceptConnection(final C connection, final ComHost<C> parent)
 		{
 			// note: things like authentication could be done here in a wrapping implementation.
-			
-			final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
-			
+						
 			try
 			{
-				this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
-			}
-			catch(final Throwable e)
-			{
-				//TODO: log or print message
-				XDebug.println("Protokoll exchange failed: \n" + e);
-			}
+				this.validiateClient(connection);
+											
+				this.connectionHandler.enableSecurity(connection);
 				
-			final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
-							
-			try
-			{
-				this.channelAcceptor.acceptChannel(channel);
+				final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
+								
+				this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
+				
+				final ComHostChannel<C> channel = this.persistenceAdaptor.createHostChannel(connection, protocol, parent);
+				
+				try
+				{
+					this.channelAcceptor.acceptChannel(channel);
+				}
+				catch(final Throwable e)
+				{
+					this.channelExceptionHandler.handleException(e, channel);
+				}
+				
 			}
 			catch(final Throwable e)
 			{
-				this.channelExceptionHandler.handleException(e, channel);
+				//TODO: Log this somewhere
+				this.connectionHandler.close(connection);
+			}
+																	
+		}
+
+		private void validiateClient(final C connection)
+		{
+			final ByteBuffer expectedIdentifer = this.peerIdentifier.getBuffer();
+			final ByteBuffer clientIdentifierBuffer = ByteBuffer.allocate(expectedIdentifer.capacity());
+			this.connectionHandler.receiveClientIdentifer(connection, clientIdentifierBuffer);
+			clientIdentifierBuffer.flip();
+												
+			if(expectedIdentifer.compareTo(clientIdentifierBuffer) != 0)
+			{
+				throw new ComException("invalid peer identifier");
 			}
 
 		}
