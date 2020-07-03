@@ -2,6 +2,7 @@ package one.microstream.com.binary;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 
 import one.microstream.X;
 import one.microstream.com.Com;
@@ -23,6 +24,7 @@ public class ComBinary
 	 * The length of the fixed-size chunk header.<p>
 	 * So far, the header only consists of one field holding the length of the chunk content.
 	 * See {@link Binary#lengthLength()}.
+	 * And an crc32 checksum of the chunk content length
 	 * 
 	 * In the future, the header might contain validation values like protocol name, version, byte order, etc.<br>
 	 * Maybe, the consequence will be a dynamically sized header, meaning there
@@ -32,7 +34,8 @@ public class ComBinary
 	 */
 	public static int chunkHeaderLength()
 	{
-		return Long.BYTES;
+		return Long.BYTES		//chunk length
+			 + Long.BYTES;		//chunk length crc32 checksum
 	}
 	
 	public static long getChunkHeaderContentLength(
@@ -44,6 +47,16 @@ public class ComBinary
 			? Long.reverseBytes(XMemory.get_long(XMemory.getDirectByteBufferAddress(directByteBuffer)))
 			:                   XMemory.get_long(XMemory.getDirectByteBufferAddress(directByteBuffer))
 		;
+	}
+	
+	public static long getChunkHeaderContentLengthChecksum(
+		final ByteBuffer directByteBuffer ,
+		final boolean    switchedByteOrder)
+	{
+		return switchedByteOrder
+				? Long.reverseBytes(XMemory.get_long(XMemory.getDirectByteBufferAddress(directByteBuffer) + Long.BYTES))
+				:                   XMemory.get_long(XMemory.getDirectByteBufferAddress(directByteBuffer) + Long.BYTES)
+			;
 	}
 	
 	public static ByteBuffer setChunkHeaderContentLength(
@@ -61,6 +74,38 @@ public class ComBinary
 		);
 		
 		return directByteBuffer;
+	}
+	
+	public static ByteBuffer setChunkHeaderContentLengthChecksum(
+		final ByteBuffer directByteBuffer ,
+		final long       checksum         ,
+		final boolean    switchedByteOrder)
+	{
+		XMemory.set_long(
+				XMemory.getDirectByteBufferAddress(directByteBuffer) + Long.BYTES,
+				switchedByteOrder
+				? Long.reverseBytes(checksum)
+				:                   checksum
+			);
+		
+		return directByteBuffer;
+	}
+	
+	public static long calculateChunkHeaderContentLengthChecksum(final ByteBuffer directByteBuffer)
+	{
+		return calculateCRC32Checksum(directByteBuffer, 0, Long.BYTES);
+	}
+	
+	public static long calculateCRC32Checksum(
+			final ByteBuffer buffer,
+			final int position,
+			final int length)
+	{
+		final CRC32 crc32 = new CRC32();
+		final byte[] data = XMemory.toArray(buffer, position, length);
+		crc32.update(data);
+		
+		return crc32.getValue();
 	}
 	
 	/* (10.08.2018 TM)TODO: Better network timeout handling
@@ -103,7 +148,18 @@ public class ComBinary
 			filledHeaderBuffer,
 			switchedByteOrder
 		);
+		
+		//get checksum, calculate and compare
+		final long contentLengthCheckSum = getChunkHeaderContentLengthChecksum(filledHeaderBuffer, switchedByteOrder);
+		final long expectedCheckSum = calculateCRC32Checksum(filledHeaderBuffer, 0, Long.BYTES);
+
+		if(expectedCheckSum != contentLengthCheckSum)
+		{
+			//XDebug.println("ContentLength checksum missmatch");
+			throw new ComException("ContentLength checksum missmatch");
+		}
 				
+		
 		/* (13.11.2018 TM)NOTE:
 		 * Should the header contain validation meta-data in the future, they have to be validated here.
 		 * This would probably mean turning this method into a instance of a com-handling type.
