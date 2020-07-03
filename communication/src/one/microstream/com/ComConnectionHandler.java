@@ -11,6 +11,10 @@ import one.microstream.memory.XMemory;
 
 public interface ComConnectionHandler<C>
 {
+	///////////////////////////////////////////////////////////////////////////
+	// interface methods //
+	//////////////////////
+	
 	public ComConnectionListener<C> createConnectionListener(InetSocketAddress address);
 	
 	public C openConnection(InetSocketAddress address);
@@ -48,14 +52,18 @@ public interface ComConnectionHandler<C>
 	public ComProtocol receiveProtocol(C connection, ComProtocolStringConverter stringConverter);
 		
 	
+	public void sendClientIdentifer(C connection, ByteBuffer buffer);
 	
+	public void receiveClientIdentifer(final C connection, final ByteBuffer buffer);
+	
+	public void enableSecurity(C connection);
 	
 	public static ComConnectionHandler.Default Default()
 	{
 		return new ComConnectionHandler.Default();
 	}
 	
-	public final class Default implements ComConnectionHandler<ComConnection>
+	public class Default implements ComConnectionHandler<ComConnection>
 	{
 		///////////////////////////////////////////////////////////////////////////
 		// instance fields //
@@ -63,19 +71,17 @@ public interface ComConnectionHandler<C>
 		
 		private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
 				
-		
-		
+			
 		///////////////////////////////////////////////////////////////////////////
 		// constructors //
 		/////////////////
 		
-		Default()
+		protected Default()
 		{
 			super();
 		}
 		
-		
-	
+			
 		///////////////////////////////////////////////////////////////////////////
 		// methods //
 		////////////
@@ -94,7 +100,7 @@ public interface ComConnectionHandler<C>
 		public ComConnection openConnection(final InetSocketAddress address)
 		{
 			final SocketChannel clientChannel = XSockets.openChannel(address);
-			
+						
 			return new ComConnection.Default(clientChannel);
 		}
 
@@ -146,6 +152,19 @@ public interface ComConnectionHandler<C>
 			connection.writeCompletely(buffer);
 		}
 		
+		
+		@Override
+		public void sendClientIdentifer(final ComConnection connection, final ByteBuffer buffer)
+		{
+			connection.writeUnsecured(buffer);
+		}
+		
+		@Override
+		public void receiveClientIdentifer(final ComConnection connection, final ByteBuffer buffer)
+		{
+			connection.readUnsecure(buffer);
+		}
+		
 		@Override
 		public void sendProtocol(
 			final ComConnection              connection     ,
@@ -185,7 +204,14 @@ public interface ComConnectionHandler<C>
 			
 			return stringConverter.parse(_charArrayRange.New(protocolChars));
 		}
-		
+
+
+		@Override
+		public void enableSecurity(final ComConnection connection)
+		{
+			//The default Connection is not encrypted, nothing to do
+		}
+
 	}
 	
 }

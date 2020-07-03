@@ -29,16 +29,18 @@ public class ComTLSConnection implements ComConnection
 	////////////////////
 		
 	private final SocketChannel channel;
-	private final SSLEngine		sslEngine;
-
-	private final ByteBuffer    sslEncyptedOut;
-	private final ByteBuffer    sslEncryptedIn;
-	private final ByteBuffer    sslDecrypted;
+	private SSLEngine           sslEngine;
+	private ByteBuffer          sslEncyptedOut;
+	private ByteBuffer          sslEncryptedIn;
+	private ByteBuffer          sslDecrypted;
 	
 	/**
 	 * Timeout for blocking read operations during TLS handshake
 	 */
 	private final int sslHandshakeReadTimeOut;
+	private final SSLContext sslContext;
+	private final boolean clientMode;
+	private final TLSParametersProvider tlsParameterProvider;
 	
 	///////////////////////////////////////////////////////////////////////////
 	// constructors //
@@ -50,25 +52,10 @@ public class ComTLSConnection implements ComConnection
 		final boolean clientMode)
 	{
 		this.sslHandshakeReadTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
-		
-		this.channel   = channel;
-		this.sslEngine = sslContext.createSSLEngine();
-		this.sslEngine.setUseClientMode(clientMode);
-		this.sslEngine.setSSLParameters(tlsParameterProvider.getSSLParameters());
-								
-		this.sslEncryptedIn   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
-		this.sslEncyptedOut   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
-		this.sslDecrypted     = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
-		
-		try
-		{
-			this.doHandshake();
-		}
-		catch (final IOException e)
-		{
-			throw new ComException("TLS handshake failed ", e);
-		}
-		
+		this.channel                 = channel;
+		this.sslContext              = sslContext;
+		this.clientMode              = clientMode;
+		this.tlsParameterProvider    = tlsParameterProvider;
 	}
 
 	
@@ -80,6 +67,18 @@ public class ComTLSConnection implements ComConnection
 	public void readCompletely(final ByteBuffer outBuffer)
 	{
 		this.read(outBuffer, 1000, outBuffer.capacity());
+	}
+	
+	@Override
+	public void readUnsecure(final ByteBuffer buffer)
+	{
+		this.read(buffer);
+	}
+	
+	@Override
+	public void writeUnsecured(final ByteBuffer buffer)
+	{
+		XSockets.writeCompletely(this.channel, buffer);
 	}
 	
 	@Override
@@ -110,6 +109,16 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void close()
 	{
+		if(this.sslEngine != null)
+		{
+			this.closeSSLEngine();
+		}
+		
+		XSockets.closeChannel(this.channel);
+	}
+	
+	private void closeSSLEngine()
+	{
 		//this zero sized buffer is needed for the SSLEngine to create the closing messages
 		final ByteBuffer emptyBuffer = ByteBuffer.allocate(0);
 		SSLEngineResult result;
@@ -127,7 +136,6 @@ public class ComTLSConnection implements ComConnection
 			{
 				throw new ComException("failed to encypt buffer", e);
 			}
-						
 			if(result.getStatus() == Status.OK)
 			{
 				XSockets.writeCompletely(this.channel, this.sslEncyptedOut);
@@ -135,8 +143,6 @@ public class ComTLSConnection implements ComConnection
 			
 			this.sslEncyptedOut.compact();
 		}
-		
-		XSockets.closeChannel(this.channel);
 	}
 
 	@Override
@@ -187,7 +193,7 @@ public class ComTLSConnection implements ComConnection
 		}
 	}
 	
-	private synchronized void readHandshakeData(final ByteBuffer buffer)
+	private synchronized void read(final ByteBuffer buffer)
 	{
 		final ExecutorService executor = Executors.newSingleThreadExecutor();
 				
@@ -224,7 +230,7 @@ public class ComTLSConnection implements ComConnection
 			 		
 		if(this.sslEncryptedIn.position() == 0)
 		{
-			this.readHandshakeData(this.sslEncryptedIn);
+			this.read(this.sslEncryptedIn);
 		}
 		
 		this.sslEncryptedIn.flip();
@@ -246,7 +252,7 @@ public class ComTLSConnection implements ComConnection
 	 			
 	 			if(status == Status.BUFFER_UNDERFLOW)
 	 			{
-	 				this.readHandshakeData(this.sslEncryptedIn);
+	 				this.read(this.sslEncryptedIn);
 	 			}
 	 		}
  		}
@@ -452,5 +458,27 @@ public class ComTLSConnection implements ComConnection
 		{
 			throw new ComException("failed to decypt buffer", e);
 		}
+	}
+
+	@Override
+	public void enableSecurity()
+	{
+		this.sslEngine = this.sslContext.createSSLEngine();
+		this.sslEngine.setUseClientMode(this.clientMode);
+		this.sslEngine.setSSLParameters(this.tlsParameterProvider.getSSLParameters());
+								
+		this.sslEncryptedIn = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslEncyptedOut = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		this.sslDecrypted   = ByteBuffer.allocate(this.sslEngine.getSession().getPacketBufferSize());
+		
+		try
+		{
+			this.doHandshake();
+		}
+		catch (final IOException e)
+		{
+			throw new ComException("TLS handshake failed ", e);
+		}
+		
 	}
 }
