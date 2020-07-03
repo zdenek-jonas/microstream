@@ -177,12 +177,13 @@ public interface ComPersistenceChannelBinary<C> extends ComPersistenceChannel<C,
 				chunk.totalLength(),
 				this.switchByteOrder()
 			);
-			
-//			for(final ByteBuffer bb : chunk.buffers())
-//			{
-//				DEBUG_printBufferBinaryValues(bb);
-//			}
-			
+				
+			ComBinary.setChunkHeaderContentLengthChecksum(
+					defaultBuffer,
+					ComBinary.calculateChunkHeaderContentLengthChecksum(defaultBuffer),
+					this.switchByteOrder()
+				);
+						
 			try
 			{
 				ComBinary.writeChunk(channel, defaultBuffer, chunk.buffers());
