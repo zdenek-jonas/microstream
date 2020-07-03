@@ -18,7 +18,7 @@ public class MainTestComTLSServerDynamic
 	{
 		
 		final String largeString = createLargeString(10_000);
-		XDebug.println("startiing host...");
+		XDebug.println("starting host...");
 		
 		final ComHost<?> host = ComBinaryDynamic.Foundation()
 			.setHostByteOrder(ByteOrder.BIG_ENDIAN)

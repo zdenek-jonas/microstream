@@ -31,7 +31,7 @@ public interface ComConnectionAcceptor<C>
 		final ComConnectionHandler<C>       connectionHandler      ,
 		final ComPersistenceAdaptor<C>      persistenceAdaptor     ,
 		final ComHostChannelAcceptor<C>     channelAcceptor		   ,
-		final ComChannelExceptionHandler    exceptionHandler       ,
+		final ComHostExceptionHandler<C>    exceptionHandler       ,
 		final ComPeerIdentifier             peerIdentifier
 	)
 	{
@@ -53,13 +53,13 @@ public interface ComConnectionAcceptor<C>
 		// instance fields //
 		////////////////////
 		
-		private final ComProtocolProvider<C>     protocolProvider       ;
-		private final ComProtocolStringConverter protocolStringConverter;
-		private final ComConnectionHandler<C>    connectionHandler      ;
-		private final ComPersistenceAdaptor<C>   persistenceAdaptor     ;
-		private final ComHostChannelAcceptor<C>  channelAcceptor        ;
-		private final ComChannelExceptionHandler channelExceptionHandler;
-		private final ComPeerIdentifier			 peerIdentifier         ;
+		private final ComProtocolProvider<C>        protocolProvider       ;
+		private final ComProtocolStringConverter    protocolStringConverter;
+		private final ComConnectionHandler<C>       connectionHandler      ;
+		private final ComPersistenceAdaptor<C>      persistenceAdaptor     ;
+		private final ComHostChannelAcceptor<C>     channelAcceptor        ;
+		private final ComHostExceptionHandler<C>    exceptionHandler       ;
+		private final ComPeerIdentifier             peerIdentifier         ;
 		
 		
 		///////////////////////////////////////////////////////////////////////////
@@ -67,13 +67,13 @@ public interface ComConnectionAcceptor<C>
 		/////////////////
 		
 		Default(
-			final ComProtocolProvider<C>     protocolProvider       ,
-			final ComProtocolStringConverter protocolStringConverter,
-			final ComConnectionHandler<C>    connectionHandler      ,
-			final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
-			final ComHostChannelAcceptor<C>  channelAcceptor        ,
-			final ComChannelExceptionHandler exceptionHandler		,
-			final ComPeerIdentifier			 peerIdentifier
+			final ComProtocolProvider<C>        protocolProvider       ,
+			final ComProtocolStringConverter    protocolStringConverter,
+			final ComConnectionHandler<C>       connectionHandler      ,
+			final ComPersistenceAdaptor<C>      persistenceAdaptor     ,
+			final ComHostChannelAcceptor<C>     channelAcceptor        ,
+			final ComHostExceptionHandler<C>    exceptionHandler       ,
+			final ComPeerIdentifier             peerIdentifier
 		)
 		{
 			super();
@@ -82,7 +82,7 @@ public interface ComConnectionAcceptor<C>
 			this.connectionHandler       = connectionHandler      ;
 			this.persistenceAdaptor      = persistenceAdaptor     ;
 			this.channelAcceptor         = channelAcceptor        ;
-			this.channelExceptionHandler = exceptionHandler       ;
+			this.exceptionHandler        = exceptionHandler       ;
 			this.peerIdentifier          = peerIdentifier         ;
 		}
 		
@@ -121,14 +121,13 @@ public interface ComConnectionAcceptor<C>
 				}
 				catch(final Throwable e)
 				{
-					this.channelExceptionHandler.handleException(e, channel);
+					this.exceptionHandler.handleException(e, channel);
 				}
 				
 			}
-			catch(final Throwable e)
+			catch(final Throwable exception)
 			{
-				//TODO: Log this somewhere
-				this.connectionHandler.close(connection);
+				this.exceptionHandler.handleConnectException(exception, connection);
 			}
 																	
 		}

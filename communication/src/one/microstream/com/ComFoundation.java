@@ -54,7 +54,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	public ComConnectionLogicDispatcher<C> getConnectionLogicDispatcher();
 	
 	//Custom handler for channel errors
-	public ComChannelExceptionHandler getChannelExceptionHandler();
+	public ComHostExceptionHandler<?> getHostExceptionHandler();
 	
 	public ComPeerIdentifier getPeerIdentifier();
 	
@@ -120,7 +120,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public F setClientTargetAddress(InetSocketAddress clientTargetAddress);
 	
-	public F setChannelExceptionHandler(ComChannelExceptionHandler exceptionHandler);
+	public F setHostExceptionHandler(ComHostExceptionHandler<C> exceptionHandler);
 	
 	public ComHost<C> createHost();
 	
@@ -169,7 +169,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		
 		private ComClientCreator<C>             clientCreator            ;
 		private ComConnectionLogicDispatcher<C> connectionLogicDispatcher;
-		private ComChannelExceptionHandler      channelExceptionHandler  ;
+		private ComHostExceptionHandler<C>      hostExceptionHandler     ;
 		private ComPeerIdentifier               peerIdentifier           ;
 
 		
@@ -449,14 +449,14 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		}
 		
 		@Override
-		public ComChannelExceptionHandler getChannelExceptionHandler()
+		public ComHostExceptionHandler<C> getHostExceptionHandler()
 		{
-			if(this.channelExceptionHandler == null)
+			if(this.hostExceptionHandler == null)
 			{
-				this.channelExceptionHandler = this.ensureChannelExceptionHandler();
+				this.hostExceptionHandler = this.ensureHostExceptionHandler();
 			}
 			
-			return this.channelExceptionHandler;
+			return this.hostExceptionHandler;
 		}
 		
 		@Override
@@ -626,9 +626,9 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 			);
 		}
 				
-		protected ComChannelExceptionHandler ensureChannelExceptionHandler()
+		protected ComHostExceptionHandler<C> ensureHostExceptionHandler()
 		{
-			return ComChannelExceptionHandler.New();
+			return ComHostExceptionHandler.New(this.getConnectionHandler());
 		}
 		
 		
@@ -821,9 +821,9 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		}
 		
 		@Override
-		public F setChannelExceptionHandler(final ComChannelExceptionHandler exceptionHandler)
+		public F setHostExceptionHandler(final ComHostExceptionHandler<C> exceptionHandler)
 		{
-			this.channelExceptionHandler = exceptionHandler;
+			this.hostExceptionHandler = exceptionHandler;
 			return this.$();
 		}
 				
@@ -837,7 +837,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 				this.getConnectionHandler()         ,
 				this.getHostPersistenceAdaptor()    ,
 				this.getHostChannelAcceptor()       ,
-				this.getChannelExceptionHandler()   ,
+				this.getHostExceptionHandler()   ,
 				this.getPeerIdentifier()
 			);
 

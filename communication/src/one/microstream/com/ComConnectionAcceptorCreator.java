@@ -10,7 +10,7 @@ public interface ComConnectionAcceptorCreator<C>
 		ComConnectionHandler<C>    connectionHandler      ,
 		ComPersistenceAdaptor<C>   persistenceAdaptor     ,
 		ComHostChannelAcceptor<C>  channelAcceptor        ,
-		ComChannelExceptionHandler exceptionHandler       ,
+		ComHostExceptionHandler<C> comHostExceptionHandler,
 		ComPeerIdentifier          peerIdentifier
 	);
 	
@@ -44,7 +44,7 @@ public interface ComConnectionAcceptorCreator<C>
 			final ComConnectionHandler<C>    connectionHandler      ,
 			final ComPersistenceAdaptor<C>   persistenceAdaptor     ,
 			final ComHostChannelAcceptor<C>  channelAcceptor        ,
-			final ComChannelExceptionHandler exceptionHandler       ,
+			final ComHostExceptionHandler<C> exceptionHandler       ,
 			final ComPeerIdentifier          peerIdentifier
 		)
 		{
