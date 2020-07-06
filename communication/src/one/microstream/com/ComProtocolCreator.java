@@ -10,10 +10,11 @@ import one.microstream.persistence.types.PersistenceTypeDictionaryView;
 public interface ComProtocolCreator
 {
 	public ComProtocol creatProtocol(
-		String                        name          ,
-		String                        version       ,
-		ByteOrder                     byteOrder     ,
-		PersistenceIdStrategy         idStrategy    ,
+		String                        name             ,
+		String                        version          ,
+		ByteOrder                     byteOrder        ,
+		long                          inactivityTimeOut,
+		PersistenceIdStrategy         idStrategy       ,
 		PersistenceTypeDictionaryView typeDictionary
 	);
 	
@@ -43,14 +44,15 @@ public interface ComProtocolCreator
 
 		@Override
 		public ComProtocol creatProtocol(
-			final String                        name          ,
-			final String                        version       ,
-			final ByteOrder                     byteOrder     ,
-			final PersistenceIdStrategy         idStrategy    ,
+			final String                        name             ,
+			final String                        version          ,
+			final ByteOrder                     byteOrder        ,
+			final long                          inactivityTimeOut,
+			final PersistenceIdStrategy         idStrategy       ,
 			final PersistenceTypeDictionaryView typeDictionary
 		)
 		{
-			return new ComProtocol.Default(name, version, byteOrder, idStrategy, typeDictionary);
+			return new ComProtocol.Default(name, version, byteOrder, inactivityTimeOut, idStrategy, typeDictionary);
 		}
 		
 	}

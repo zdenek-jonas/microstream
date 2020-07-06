@@ -19,6 +19,7 @@ public class MainTestComServerDynamic
 				final Object o = hostChannel.receive();
 				XDebug.println("HOST RECEIVED: " + o.toString());
 			})
+			.setInactivityTimeout(6000)
 			.createHost()
 		;
 

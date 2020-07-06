@@ -13,6 +13,7 @@ public interface ComProtocolProviderCreator<C>
 		String                                name                  ,
 		String                                version               ,
 		ByteOrder                             byteOrder             ,
+		long                                  inactivityTimeout     ,
 		PersistenceIdStrategy                 idStrategy            ,
 		PersistenceTypeDictionaryViewProvider typeDictionaryProvider,
 		ComProtocolCreator                    protocolCreator
@@ -37,7 +38,6 @@ public interface ComProtocolProviderCreator<C>
 		}
 		
 		
-		
 		///////////////////////////////////////////////////////////////////////////
 		// methods //
 		////////////
@@ -47,21 +47,23 @@ public interface ComProtocolProviderCreator<C>
 			final String                                name                  ,
 			final String                                version               ,
 			final ByteOrder                             byteOrder             ,
+			final long                                  inactivityTimeout     ,
 			final PersistenceIdStrategy                 idStrategy            ,
 			final PersistenceTypeDictionaryViewProvider typeDictionaryProvider,
 			final ComProtocolCreator                    protocolCreator
+			
 		)
 		{
 			return new ComProtocolProvider.Default<>(
 				name                  ,
 				version               ,
 				byteOrder             ,
+				inactivityTimeout     ,
 				idStrategy            ,
 				typeDictionaryProvider,
 				protocolCreator
 			);
 		}
-		
 	}
 	
 }
