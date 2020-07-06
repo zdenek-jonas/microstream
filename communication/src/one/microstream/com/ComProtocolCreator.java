@@ -13,7 +13,7 @@ public interface ComProtocolCreator
 		String                        name             ,
 		String                        version          ,
 		ByteOrder                     byteOrder        ,
-		long                          inactivityTimeOut,
+		int                           inactivityTimeOut,
 		PersistenceIdStrategy         idStrategy       ,
 		PersistenceTypeDictionaryView typeDictionary
 	);
@@ -47,7 +47,7 @@ public interface ComProtocolCreator
 			final String                        name             ,
 			final String                        version          ,
 			final ByteOrder                     byteOrder        ,
-			final long                          inactivityTimeOut,
+			final int                           inactivityTimeOut,
 			final PersistenceIdStrategy         idStrategy       ,
 			final PersistenceTypeDictionaryView typeDictionary
 		)

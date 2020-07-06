@@ -324,7 +324,7 @@ public interface ComProtocolStringConverter extends ObjectStringConverter<ComPro
 		{
 			final String            version           = content.get(this.labelProtocolVersion());
 			final ByteOrder         byteOrder         = this.parseByteOrder(content.get(this.labelByteOrder()));
-			final long              inactivityTimeout = this.parseLong(content.get(this.labelInactivityTimeout()));
+			final int               inactivityTimeout = this.parseInteger(content.get(this.labelInactivityTimeout()));
 			final PersistenceIdStrategy idStrategy    = this.parseIdStrategy(content.get(this.labelIdStrategy()));
 			final PersistenceTypeDictionary typeDict  = this.parseTypeDictionary(content.get(this.labelTypeDictionary()));
 						
@@ -336,10 +336,10 @@ public interface ComProtocolStringConverter extends ObjectStringConverter<ComPro
 			return XMemory.parseByteOrder(input);
 		}
 		
-		private long parseLong(final String input)
+		private int parseInteger(final String input)
 		{
 			//TODO: consider byteOrder?
-			return Long.valueOf(input);
+			return Integer.valueOf(input);
 		}
 		
 		private PersistenceIdStrategy parseIdStrategy(final String input)

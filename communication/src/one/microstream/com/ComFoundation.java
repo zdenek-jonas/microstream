@@ -18,7 +18,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public ByteOrder getHostByteOrder();
 	
-	public long getInactivityTimeout();
+	public int getInactivityTimeout();
 	
 	public PersistenceIdStrategy getClientIdStrategy();
 			
@@ -73,7 +73,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public F setHostByteOrder(ByteOrder hostByteOrder);
 	
-	public F setInactivityTimeout(long inactivityTimeout);
+	public F setInactivityTimeout(int inactivityTimeout);
 	
 	public F setClientIdStrategy(PersistenceIdStrategy idStrategy);
 	
@@ -150,7 +150,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		private String                          protocolName             ;
 		private String                          protocolVersion          ;
 		private ByteOrder                       hostByteOrder            ;
-		private long                            inactivityTimeout        ;
+		private int                             inactivityTimeout        ;
 		private PersistenceIdStrategy           clientIdStrategy         ;
 		private ComProtocolCreator              protocolCreator          ;
 		private ComProtocolProvider<C>          protocolProvider         ;
@@ -211,7 +211,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		}
 		
 		@Override
-		public long getInactivityTimeout()
+		public int getInactivityTimeout()
 		{
 			return this.inactivityTimeout;
 		}
@@ -665,7 +665,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		}
 		
 		@Override
-		public F setInactivityTimeout(final long inactivityTimeout)
+		public F setInactivityTimeout(final int inactivityTimeout)
 		{
 			this.inactivityTimeout = inactivityTimeout;
 			return this.$();

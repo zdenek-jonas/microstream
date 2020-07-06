@@ -25,7 +25,7 @@ public interface ComProtocolProvider<C> extends ComProtocolData
 		final String                                name                  ,
 		final String                                version               ,
 		final ByteOrder                             byteOrder             ,
-		final long                                  inactivityTimeout     ,
+		final int                                   inactivityTimeout     ,
 		final PersistenceIdStrategy                 idStrategy            ,
 		final PersistenceTypeDictionaryViewProvider typeDictionaryProvider,
 		final ComProtocolCreator                    protocolCreator
@@ -51,7 +51,7 @@ public interface ComProtocolProvider<C> extends ComProtocolData
 		private final String                                name                  ;
 		private final String                                version               ;
 		private final ByteOrder                             byteOrder             ;
-		private final long                                  inactivityTimeout     ;
+		private final int                                   inactivityTimeout     ;
 		private final PersistenceIdStrategy                 idStrategy            ;
 		private final PersistenceTypeDictionaryViewProvider typeDictionaryProvider;
 		private final ComProtocolCreator                    protocolCreator       ;
@@ -65,7 +65,7 @@ public interface ComProtocolProvider<C> extends ComProtocolData
 			final String                                name                  ,
 			final String                                version               ,
 			final ByteOrder                             byteOrder             ,
-			final long                                  inactivityTimeout     ,
+			final int                                   inactivityTimeout     ,
 			final PersistenceIdStrategy                 idStrategy            ,
 			final PersistenceTypeDictionaryViewProvider typeDictionaryProvider,
 			final ComProtocolCreator                    protocolCreator
@@ -119,7 +119,7 @@ public interface ComProtocolProvider<C> extends ComProtocolData
 		}
 		
 		@Override
-		public long inactivityTimeout()
+		public int inactivityTimeout()
 		{
 			return this.inactivityTimeout;
 		}

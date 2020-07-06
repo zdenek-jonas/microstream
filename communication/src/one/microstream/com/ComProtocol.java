@@ -30,7 +30,7 @@ public interface ComProtocol extends ComProtocolData
 		final String                        name             ,
 		final String                        version          ,
 		final ByteOrder                     byteOrder        ,
-		final long                          inactivityTimeout,
+		final int                           inactivityTimeout,
 		final PersistenceIdStrategy         idStrategy       ,
 		final PersistenceTypeDictionaryView persistenceTypeDictionaryView
 	)
@@ -54,7 +54,7 @@ public interface ComProtocol extends ComProtocolData
 		private final String                        name             ;
 		private final String                        version          ;
 		private final ByteOrder                     byteOrder        ;
-		private final long                          inactivityTimeOut;
+		private final int                           inactivityTimeOut;
 		private final PersistenceIdStrategy         idStrategy       ;
 		private final PersistenceTypeDictionaryView typeDictionary   ;
 		
@@ -69,7 +69,7 @@ public interface ComProtocol extends ComProtocolData
 			final String                        name             ,
 			final String                        version          ,
 			final ByteOrder                     byteOrder        ,
-			final long                          inactivityTimeOut,
+			final int                           inactivityTimeOut,
 			final PersistenceIdStrategy         idStrategy       ,
 			final PersistenceTypeDictionaryView typeDictionary
 			
@@ -122,7 +122,7 @@ public interface ComProtocol extends ComProtocolData
 		}
 		
 		@Override
-		public final long inactivityTimeout()
+		public final int inactivityTimeout()
 		{
 			return this.inactivityTimeOut;
 		}
