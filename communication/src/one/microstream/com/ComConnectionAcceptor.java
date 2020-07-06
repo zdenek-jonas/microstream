@@ -110,6 +110,7 @@ public interface ComConnectionAcceptor<C>
 				this.connectionHandler.enableSecurity(connection);
 				
 				final ComProtocol protocol = this.protocolProvider.provideProtocol(connection);
+				this.connectionHandler.setInactivityTimeout(connection, protocol.inactivityTimeout());
 								
 				this.connectionHandler.sendProtocol(connection, protocol, this.protocolStringConverter);
 				

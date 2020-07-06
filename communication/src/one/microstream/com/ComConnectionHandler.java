@@ -51,6 +51,7 @@ public interface ComConnectionHandler<C>
 	
 	public ComProtocol receiveProtocol(C connection, ComProtocolStringConverter stringConverter);
 		
+	public void setInactivityTimeout(C connection, int inactivityTimeout);
 	
 	public void sendClientIdentifer(C connection, ByteBuffer buffer);
 	
@@ -210,6 +211,13 @@ public interface ComConnectionHandler<C>
 		public void enableSecurity(final ComConnection connection)
 		{
 			//The default Connection is not encrypted, nothing to do
+		}
+
+
+		@Override
+		public void setInactivityTimeout(final ComConnection connection, final int inactivityTimeout)
+		{
+			connection.setTimeOut(inactivityTimeout);
 		}
 
 	}

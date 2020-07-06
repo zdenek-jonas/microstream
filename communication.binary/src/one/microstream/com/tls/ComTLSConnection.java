@@ -37,7 +37,7 @@ public class ComTLSConnection implements ComConnection
 	/**
 	 * Timeout for blocking read operations during TLS handshake
 	 */
-	private final int sslHandshakeReadTimeOut;
+	private int readTimeOut;
 	private final SSLContext sslContext;
 	private final boolean clientMode;
 	private final TLSParametersProvider tlsParameterProvider;
@@ -51,7 +51,7 @@ public class ComTLSConnection implements ComConnection
 		final TLSParametersProvider tlsParameterProvider,
 		final boolean clientMode)
 	{
-		this.sslHandshakeReadTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
+		this.readTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
 		this.channel                 = channel;
 		this.sslContext              = sslContext;
 		this.clientMode              = clientMode;
@@ -64,9 +64,9 @@ public class ComTLSConnection implements ComConnection
 	////////////
 	
 	@Override
-	public void readCompletely(final ByteBuffer outBuffer)
+	public void readCompletely(final ByteBuffer buffer)
 	{
-		this.read(outBuffer, 1000, outBuffer.capacity());
+		this.read(buffer);
 	}
 	
 	@Override
@@ -82,7 +82,7 @@ public class ComTLSConnection implements ComConnection
 	}
 	
 	@Override
-	public ByteBuffer read(final ByteBuffer defaultBuffer, final int timeout, final int length)
+	public ByteBuffer read(final ByteBuffer defaultBuffer, final int length)
 	{
 		if(!this.channel.isOpen())
 		{
@@ -203,7 +203,7 @@ public class ComTLSConnection implements ComConnection
 		{
 			readResult = executor
 				.submit(() -> { return this.channel.read(buffer); })
-				.get(this.sslHandshakeReadTimeOut, TimeUnit.MILLISECONDS);
+				.get(this.readTimeOut, TimeUnit.MILLISECONDS);
 		}
 		catch (InterruptedException | ExecutionException e)
 		{
@@ -480,5 +480,12 @@ public class ComTLSConnection implements ComConnection
 			throw new ComException("TLS handshake failed ", e);
 		}
 		
+	}
+
+
+	@Override
+	public void setTimeOut(final int inactivityTimeout)
+	{
+		this.readTimeOut = inactivityTimeout;
 	}
 }

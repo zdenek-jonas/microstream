@@ -141,7 +141,7 @@ public class ComBinary
 		ByteBuffer filledContentBuffer;
 		
 		// the known-length header is read into a buffer
-		filledHeaderBuffer = connection.read(defaultBuffer, operationTimeout(), ComBinary.chunkHeaderLength());
+		filledHeaderBuffer = connection.read(defaultBuffer, ComBinary.chunkHeaderLength());
 							
 		// the header starts with the content length (and currently, that is the whole header)
 		final long chunkContentLength = ComBinary.getChunkHeaderContentLength(
@@ -166,7 +166,7 @@ public class ComBinary
 		 */
 		
 		// the content after the header is read into a buffer since the header has already been siphoned off.
-		filledContentBuffer = connection.read(defaultBuffer, operationTimeout(), X.checkArrayRange(chunkContentLength));
+		filledContentBuffer = connection.read(defaultBuffer, X.checkArrayRange(chunkContentLength));
 		filledContentBuffer.flip();
 		
 		return filledContentBuffer;

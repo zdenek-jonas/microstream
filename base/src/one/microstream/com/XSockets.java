@@ -255,6 +255,24 @@ public final class XSockets
 		}
 	}
 	
+	public static ByteBuffer read(final SocketChannel channel, final ByteBuffer buffer, final int length)
+	{
+		final ByteBuffer checkedBuffer;
+
+		if(length > buffer.capacity())
+		{
+			checkedBuffer = XMemory.allocateDirectNative(length);
+		}
+		else
+		{
+			(checkedBuffer = buffer).clear().limit(length);
+		}
+		
+		read(channel, checkedBuffer);
+		
+		return checkedBuffer;
+	}
+	
 	public static void write(final SocketChannel channel, final ByteBuffer buffer) throws ComException
 	{
 		try
@@ -326,7 +344,7 @@ public final class XSockets
 		}
 	}
 	
-	
+
 	
 	///////////////////////////////////////////////////////////////////////////
 	// constructors //
@@ -342,4 +360,7 @@ public final class XSockets
 		// static only
 		throw new UnsupportedOperationException();
 	}
+
+
+
 }
