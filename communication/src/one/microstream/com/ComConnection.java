@@ -49,9 +49,19 @@ public interface ComConnection
 		{
 			XSockets.writeCompletely(this.channel, buffer);
 		}
-
+		
 		@Override
 		public ByteBuffer read(final ByteBuffer buffer, final int length)
+		{
+			if(this.readTimeOut > 0)
+			{
+				return this.readWithTimeOut(buffer, length);
+			}
+			
+			return XSockets.read(this.channel, buffer, length);
+		}
+	
+		public ByteBuffer readWithTimeOut(final ByteBuffer buffer, final int length)
 		{
 			final ExecutorService executor = Executors.newSingleThreadExecutor();
 								
@@ -67,7 +77,7 @@ public interface ComConnection
 			}
 			catch(final TimeoutException e)
 			{
-				throw new ComException("read timeout", e);
+				throw new ComExceptionTimeout("read timeout", e);
 			}
 			finally
 			{

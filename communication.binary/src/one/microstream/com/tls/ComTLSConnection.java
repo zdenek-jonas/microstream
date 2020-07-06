@@ -20,6 +20,7 @@ import javax.net.ssl.SSLSession;
 
 import one.microstream.com.ComConnection;
 import one.microstream.com.ComException;
+import one.microstream.com.ComExceptionTimeout;
 import one.microstream.com.XSockets;
 
 public class ComTLSConnection implements ComConnection
@@ -37,9 +38,9 @@ public class ComTLSConnection implements ComConnection
 	/**
 	 * Timeout for blocking read operations during TLS handshake
 	 */
-	private int readTimeOut;
-	private final SSLContext sslContext;
-	private final boolean clientMode;
+	private       int                   readTimeOut;
+	private final SSLContext            sslContext;
+	private final boolean               clientMode;
 	private final TLSParametersProvider tlsParameterProvider;
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -51,11 +52,11 @@ public class ComTLSConnection implements ComConnection
 		final TLSParametersProvider tlsParameterProvider,
 		final boolean clientMode)
 	{
-		this.readTimeOut = tlsParameterProvider.getHandshakeReadTimeOut();
-		this.channel                 = channel;
-		this.sslContext              = sslContext;
-		this.clientMode              = clientMode;
-		this.tlsParameterProvider    = tlsParameterProvider;
+		this.readTimeOut          = tlsParameterProvider.getHandshakeReadTimeOut();
+		this.channel              = channel;
+		this.sslContext           = sslContext;
+		this.clientMode           = clientMode;
+		this.tlsParameterProvider = tlsParameterProvider;
 	}
 
 	
@@ -207,11 +208,11 @@ public class ComTLSConnection implements ComConnection
 		}
 		catch (InterruptedException | ExecutionException e)
 		{
-			throw new ComException("reading data during hanshake failed", e);
+			throw new ComException("reading data failed", e);
 		}
 		catch(final TimeoutException e)
 		{
-			throw new ComException("read timeout during hanshake", e);
+			throw new ComExceptionTimeout("read timeout", e);
 		}
 		finally
 		{
