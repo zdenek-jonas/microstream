@@ -136,7 +136,7 @@ public interface ComConnectionAcceptor<C>
 		private void validiateClient(final C connection)
 		{
 			final ByteBuffer expectedIdentifer = this.peerIdentifier.getBuffer();
-			final ByteBuffer clientIdentifierBuffer = ByteBuffer.allocate(expectedIdentifer.capacity());
+			final ByteBuffer clientIdentifierBuffer = ByteBuffer.allocate(expectedIdentifer.limit());
 			this.connectionHandler.receiveClientIdentifer(connection, clientIdentifierBuffer);
 			clientIdentifierBuffer.flip();
 												
