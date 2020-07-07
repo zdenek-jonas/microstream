@@ -876,7 +876,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 				this.getClientTargetAddress()     ,
 				this.getConnectionHandler()       ,
 				this.getProtocolStringConverter() ,
-				this.getClientPersistenceAdaptor()
+				this.getClientPersistenceAdaptor(),
+				this.getInactivityTimeout()
 			);
 		}
 		

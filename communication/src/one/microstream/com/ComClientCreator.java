@@ -12,7 +12,8 @@ public interface ComClientCreator<C>
 		InetSocketAddress          hostAddress       ,
 		ComConnectionHandler<C>    connectionHandler ,
 		ComProtocolStringConverter protocolParser    ,
-		ComPersistenceAdaptor<C>   persistenceAdaptor
+		ComPersistenceAdaptor<C>   persistenceAdaptor,
+		int                        inactivityTimeOut
 	);
 	
 	
@@ -28,14 +29,16 @@ public interface ComClientCreator<C>
 			final InetSocketAddress          hostAddress       ,
 			final ComConnectionHandler<C>    connectionHandler ,
 			final ComProtocolStringConverter protocolParser    ,
-			final ComPersistenceAdaptor<C>   persistenceAdaptor
+			final ComPersistenceAdaptor<C>   persistenceAdaptor,
+			final int                        inactivityTimeOut
 		)
 		{
 			return ComClient.New(
 				notNull(hostAddress)       ,
 				notNull(connectionHandler) ,
 				notNull(protocolParser)    ,
-				notNull(persistenceAdaptor)
+				notNull(persistenceAdaptor),
+				inactivityTimeOut
 			);
 		}
 		

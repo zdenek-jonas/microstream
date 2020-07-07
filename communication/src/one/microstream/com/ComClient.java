@@ -2,8 +2,6 @@ package one.microstream.com;
 
 import java.net.InetSocketAddress;
 
-import one.microstream.com.ComException;
-
 public interface ComClient<C>
 {
 	public ComClientChannel<C> connect() throws ComException;
@@ -21,14 +19,16 @@ public interface ComClient<C>
 		final InetSocketAddress          hostAddress       ,
 		final ComConnectionHandler<C>    connectionHandler ,
 		final ComProtocolStringConverter protocolParser    ,
-		final ComPersistenceAdaptor<C>   persistenceAdaptor
+		final ComPersistenceAdaptor<C>   persistenceAdaptor,
+		final int                        inactivityTimeOut
 	)
 	{
 		return new ComClient.Default<>(
 			hostAddress       ,
 			connectionHandler ,
 			protocolParser    ,
-			persistenceAdaptor
+			persistenceAdaptor,
+			inactivityTimeOut
 		);
 	}
 	
@@ -43,6 +43,7 @@ public interface ComClient<C>
 		private final ComProtocolStringConverter protocolParser    ;
 		private final ComPersistenceAdaptor<C>   persistenceAdaptor;
 		private final ComPeerIdentifier          peerIdentifier = ComPeerIdentifier.New();
+		private final int                        inactivityTimeOut;
 		
 		
 		///////////////////////////////////////////////////////////////////////////
@@ -53,7 +54,8 @@ public interface ComClient<C>
 			final InetSocketAddress          hostAddress       ,
 			final ComConnectionHandler<C>    connectionHandler ,
 			final ComProtocolStringConverter protocolParser    ,
-			final ComPersistenceAdaptor<C>   persistenceAdaptor
+			final ComPersistenceAdaptor<C>   persistenceAdaptor,
+			final int                        inactivityTimeOut
 		)
 		{
 			super();
@@ -61,6 +63,7 @@ public interface ComClient<C>
 			this.connectionHandler  = connectionHandler ;
 			this.protocolParser     = protocolParser    ;
 			this.persistenceAdaptor = persistenceAdaptor;
+			this.inactivityTimeOut  = inactivityTimeOut ;
 		}
 
 
@@ -84,6 +87,8 @@ public interface ComClient<C>
 			this.connectionHandler.enableSecurity(conn);
 			
 			final ComProtocol         protocol = this.connectionHandler.receiveProtocol(conn, this.protocolParser);
+			this.connectionHandler.setInactivityTimeout(conn, this.inactivityTimeOut);
+			
 			final ComClientChannel<C> channel  = this.persistenceAdaptor.createClientChannel(conn, protocol, this);
 			
 			return channel;
