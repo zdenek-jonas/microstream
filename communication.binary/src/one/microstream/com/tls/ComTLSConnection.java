@@ -73,7 +73,7 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void readUnsecure(final ByteBuffer buffer)
 	{
-		this.read(buffer);
+		this.readInternal(buffer);
 	}
 	
 	@Override
@@ -194,7 +194,19 @@ public class ComTLSConnection implements ComConnection
 		}
 	}
 	
-	private synchronized void read(final ByteBuffer buffer)
+	private void readInternal(final ByteBuffer buffer)
+	{
+		if(this.readTimeOut > 0)
+		{
+			 this.readInternalWithTimeout(buffer);
+		}
+		else
+		{
+			this.readInternalNoTimeout(buffer);
+		}
+	}
+	
+	private void readInternalWithTimeout(final ByteBuffer buffer)
 	{
 		final ExecutorService executor = Executors.newSingleThreadExecutor();
 				
@@ -231,7 +243,7 @@ public class ComTLSConnection implements ComConnection
 			 		
 		if(this.sslEncryptedIn.position() == 0)
 		{
-			this.read(this.sslEncryptedIn);
+			this.readInternal(this.sslEncryptedIn);
 		}
 		
 		this.sslEncryptedIn.flip();
@@ -253,7 +265,7 @@ public class ComTLSConnection implements ComConnection
 	 			
 	 			if(status == Status.BUFFER_UNDERFLOW)
 	 			{
-	 				this.read(this.sslEncryptedIn);
+	 				this.readInternal(this.sslEncryptedIn);
 	 			}
 	 		}
  		}
@@ -362,7 +374,7 @@ public class ComTLSConnection implements ComConnection
 							
 		if(needMoreData)
 		{
-			this.readInternal();
+			this.readInternal(this.sslEncryptedIn);
 		}
 	}
 
@@ -393,26 +405,26 @@ public class ComTLSConnection implements ComConnection
 	}
 
 	/**
-	 * 
+	 *
 	 * Read from the channel into buffer
 	 * throws a ComException if the channel reached the end of stream
-	 * 
-	 * @param channel
+	 * This method blocks without a timeout
+	 *
 	 * @param buffer
 	 */
-	private void readInternal()
+	private void readInternalNoTimeout(final ByteBuffer buffer)
 	{
 		final int bytesRead;
-		
+
 		try
 		{
-			bytesRead = this.channel.read(this.sslEncryptedIn);
+			bytesRead = this.channel.read(buffer);
 		}
 		catch (final IOException e)
 		{
 			throw new ComException("failed reading from channel", e);
 		}
-		
+
 		if(bytesRead < 0)
 		{
 			throw new ComException("reached end of stream unexpected");
