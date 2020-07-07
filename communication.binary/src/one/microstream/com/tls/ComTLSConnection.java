@@ -67,7 +67,7 @@ public class ComTLSConnection implements ComConnection
 	@Override
 	public void readCompletely(final ByteBuffer buffer)
 	{
-		this.read(buffer);
+		this.read(buffer, buffer.capacity());
 	}
 	
 	@Override
@@ -212,7 +212,7 @@ public class ComTLSConnection implements ComConnection
 		}
 		catch(final TimeoutException e)
 		{
-			throw new ComExceptionTimeout("read timeout", e);
+			throw new ComExceptionTimeout("read timeout after " + this.readTimeOut + " " + TimeUnit.MILLISECONDS, e);
 		}
 		finally
 		{
