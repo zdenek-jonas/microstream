@@ -2,11 +2,11 @@ package one.microstream.storage.types;
 
 import static one.microstream.X.notNull;
 
-import java.nio.file.Path;
+import one.microstream.afs.ADirectory;
 
 public interface StorageBackupSetup
 {
-	public StorageFileProvider backupFileProvider();
+	public StorageBackupFileProvider backupFileProvider();
 	
 	public StorageFileWriter.Provider setupWriterProvider(
 		StorageFileWriter.Provider writerProvider
@@ -14,6 +14,7 @@ public interface StorageBackupSetup
 	
 	public StorageBackupHandler setupHandler(
 		StorageOperationController operationController,
+		StorageWriteController     writeController    ,
 		StorageDataFileValidator   validator
 	);
 	
@@ -23,20 +24,22 @@ public interface StorageBackupSetup
 	 * Pseudo-constructor method to create a new {@link StorageBackupSetup} instance
 	 * using the passed directory as the backup location.
 	 * <p>
-	 * For explanations and customizing values, see {@link StorageBackupSetup#New(StorageFileProvider)}.
+	 * For explanations and customizing values, see {@link StorageBackupSetup#New(StorageLiveFileProvider)}.
 	 * 
 	 * @param backupDirectory the directory where the backup shall be located.
 	 * 
-	 * @return {@linkDoc StorageBackupSetup#New(StorageFileProvider)@return}
+	 * @return {@linkDoc StorageBackupSetup#New(StorageBackupFileProvider)@return}
 	 * 
-	 * @see StorageBackupSetup#New(StorageFileProvider)
+	 * @see StorageBackupSetup#New(StorageLiveFileProvider)
 	 * @see StorageBackupHandler
 	 */
-	public static StorageBackupSetup New(final Path backupDirectory)
+	
+	public static StorageBackupSetup New(final ADirectory backupDirectory)
 	{
-		final StorageFileProvider backupFileProvider = Storage
-			.FileProviderBuilder()
-			.setBaseDirectory(backupDirectory.toString())
+		final StorageBackupFileProvider backupFileProvider = StorageBackupFileProvider.Builder(
+			backupDirectory.fileSystem()
+		)
+			.setDirectory(backupDirectory)
 			.createFileProvider()
 		;
 		return New(backupFileProvider);
@@ -44,18 +47,18 @@ public interface StorageBackupSetup
 	
 	/**
 	 * Pseudo-constructor method to create a new {@link StorageBackupSetup} instance
-	 * using the passed {@link StorageFileProvider}.
+	 * using the passed {@link StorageLiveFileProvider}.
 	 * <p>
 	 * A StorageBackupSetup basically defines where the backup files will be located by the {@link StorageBackupHandler}.
 	 * 
-	 * @param backupFileProvider the {@link StorageFileProvider} to define where the backup files will be located.
+	 * @param backupFileProvider the {@link StorageBackupFileProvider} to define where the backup files will be located.
 	 * 
 	 * @return a new {@link StorageBackupSetup} instance.
 	 * 
-	 * @see StorageBackupSetup#New(Path)
+	 * @see StorageBackupSetup#New(ADirectory)
 	 * @see StorageBackupHandler
 	 */
-	public static StorageBackupSetup New(final StorageFileProvider backupFileProvider)
+	public static StorageBackupSetup New(final StorageBackupFileProvider backupFileProvider)
 	{
 		return new StorageBackupSetup.Default(
 			notNull(backupFileProvider) ,
@@ -69,8 +72,8 @@ public interface StorageBackupSetup
 		// instance fields //
 		////////////////////
 		
-		private final StorageFileProvider    backupFileProvider;
-		private final StorageBackupItemQueue itemQueue         ;
+		private final StorageBackupFileProvider backupFileProvider;
+		private final StorageBackupItemQueue    itemQueue         ;
 		
 		
 		
@@ -79,8 +82,8 @@ public interface StorageBackupSetup
 		/////////////////
 		
 		Default(
-			final StorageFileProvider    backupFileProvider,
-			final StorageBackupItemQueue itemQueue
+			final StorageBackupFileProvider backupFileProvider,
+			final StorageBackupItemQueue    itemQueue
 		)
 		{
 			super();
@@ -95,7 +98,7 @@ public interface StorageBackupSetup
 		////////////
 
 		@Override
-		public final StorageFileProvider backupFileProvider()
+		public final StorageBackupFileProvider backupFileProvider()
 		{
 			return this.backupFileProvider;
 		}
@@ -111,6 +114,7 @@ public interface StorageBackupSetup
 		@Override
 		public StorageBackupHandler setupHandler(
 			final StorageOperationController operationController,
+			final StorageWriteController     writeController    ,
 			final StorageDataFileValidator   validator
 		)
 		{
@@ -120,6 +124,7 @@ public interface StorageBackupSetup
 				channelCount       ,
 				this.itemQueue     ,
 				operationController,
+				writeController    ,
 				validator
 			);
 		}

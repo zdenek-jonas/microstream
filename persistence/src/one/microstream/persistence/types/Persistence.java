@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 import one.microstream.X;
+import one.microstream.afs.AFile;
 import one.microstream.chars.StringTable;
 import one.microstream.chars.XChars;
 import one.microstream.collections.BulkList;
@@ -1081,6 +1082,13 @@ public class Persistence
 		return parseRefactoringMappings(stringTable);
 	}
 	
+	public static XGettingSequence<KeyValue<String, String>> readRefactoringMappings(final AFile file)
+	{
+		final StringTable stringTable = XCSV.readFromFile(file);
+		
+		return parseRefactoringMappings(stringTable);
+	}
+	
 	public static XGettingSequence<KeyValue<String, String>> readRefactoringMappings(
 		final String string
 	)
@@ -1166,7 +1174,7 @@ public class Persistence
 		{
 			// (05.08.2019 TM)EXCP: proper exception
 			throw new PersistenceExceptionTypeNotPersistable(type,
-				"Synthetic classes ($1 etc.) are not reliably persistence since a simple reordering of source code"
+				"Synthetic classes ($1 etc.) are not reliably persistable since a simple reordering of source code"
 				+ " elements would change the name identity of a class. For a type system that has to rely upon"
 				+ " resolving types by their identifying name, this would silently cause a potentially fatal error."
 				+ " If handling synthetic classes (e.g. anonymous inner classes) is absolutely necessary, a custom "

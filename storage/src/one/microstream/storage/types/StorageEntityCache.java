@@ -17,22 +17,21 @@ import one.microstream.persistence.binary.types.ChunksBuffer;
 import one.microstream.persistence.types.Persistence;
 import one.microstream.persistence.types.Unpersistable;
 import one.microstream.storage.exceptions.StorageException;
-import one.microstream.time.XTime;
 
 
-public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends StorageChannelResetablePart
+public interface StorageEntityCache<E extends StorageEntity> extends StorageChannelResetablePart
 {
 	public StorageTypeDictionary typeDictionary();
 
-	public StorageEntityType<I> lookupType(long typeId);
+	public StorageEntityType<E> lookupType(long typeId);
 
-	public boolean incrementalLiveCheck(long nanoTimeBudgetBound);
+	public boolean incrementalEntityCacheCheck(long nanoTimeBudgetBound);
 
 	public boolean incrementalGarbageCollection(long nanoTimeBudgetBound, StorageChannel channel);
 
-	public boolean issuedGarbageCollection(long nanoTimeBudget, StorageChannel channel);
+	public boolean issuedGarbageCollection(long nanoTimeBudgetBound, StorageChannel channel);
 
-	public boolean issuedCacheCheck(long nanoTimeBudget, StorageEntityCacheEvaluator entityEvaluator);
+	public boolean issuedEntityCacheCheck(long nanoTimeBudgetBound, StorageEntityCacheEvaluator entityEvaluator);
 
 	public void copyRoots(ChunksBuffer dataCollector);
 
@@ -1032,9 +1031,9 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 		}
 
 		final void internalPutEntities(
-			final ByteBuffer              chunk               ,
-			final long                    chunkStoragePosition,
-			final StorageDataFile.Default file
+			final ByteBuffer                  chunk               ,
+			final long                        chunkStoragePosition,
+			final StorageLiveDataFile.Default file
 		)
 		{
 			final long chunkStartAddress = XMemory.getDirectByteBufferAddress(chunk);
@@ -1102,9 +1101,9 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 		}
 
 		public void postStorePutEntities(
-			final ByteBuffer[]                   chunks                ,
-			final long[]                         chunksStoragePositions,
-			final StorageDataFile.Default dataFile
+			final ByteBuffer[]                chunks                ,
+			final long[]                      chunksStoragePositions,
+			final StorageLiveDataFile.Default dataFile
 		)
 			throws InterruptedException
 		{
@@ -1173,7 +1172,9 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 		}
 
 		@Override
-		public final boolean incrementalLiveCheck(final long nanoTimeBudgetBound)
+		public final boolean incrementalEntityCacheCheck(
+			final long                        nanoTimeBudgetBound
+		)
 		{
 			return this.internalCacheCheck(nanoTimeBudgetBound, this.entityCacheEvaluator);
 		}
@@ -1190,10 +1191,10 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 			}
 
 			final long evaluationTime = System.currentTimeMillis();
-			final StorageEntity.Default   cursor;
-			      StorageEntity.Default   tail  ;
-			      StorageEntity.Default   entity;
-			      StorageDataFile.Default file  ;
+			final StorageEntity.Default cursor;
+			      StorageEntity.Default tail  ;
+			      StorageEntity.Default entity;
+			      StorageLiveDataFile.Default file;
 
 			if(this.liveCursor == null || !this.liveCursor.isProper() || this.liveCursor.isDeleted())
 			{
@@ -1308,13 +1309,11 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 		// CHECKSTYLE.ON: FinalParameters
 
 		@Override
-		public boolean issuedCacheCheck(
-			final long                        nanoTimeBudget ,
+		public boolean issuedEntityCacheCheck(
+			final long                        nanoTimeBudgetBound,
 			final StorageEntityCacheEvaluator entityEvaluator
 		)
 		{
-			final long nanoTimeBudgetBound = XTime.calculateNanoTimeBudgetBound(nanoTimeBudget);
-			
 			return this.internalCacheCheck(
 				nanoTimeBudgetBound,
 				X.coalesce(entityEvaluator, this.entityCacheEvaluator)
@@ -1327,7 +1326,7 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 		 */
 		@Override
 		public final boolean issuedGarbageCollection(
-			final long           nanoTimeBudget,
+			final long           nanoTimeBudgetBound,
 			final StorageChannel channel
 		)
 		{
@@ -1335,8 +1334,6 @@ public interface StorageEntityCache<I extends StorageEntityCacheItem<I>> extends
 			{
 				return true;
 			}
-
-			final long nanoTimeBudgetBound = XTime.calculateNanoTimeBudgetBound(nanoTimeBudget);
 
 			// check time budget first for explicitly issued calls.
 			performGC:

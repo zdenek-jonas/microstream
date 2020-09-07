@@ -5,6 +5,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import one.microstream.afs.ADirectory;
+import one.microstream.afs.AFileSystem;
+import one.microstream.afs.nio.NioFileSystem;
 import one.microstream.persistence.types.Persistence;
 
 
@@ -30,12 +33,7 @@ public final class Storage
 	 */
 	private static final long ONE_MILLION = 1_000_000L;
 
-	/**
-	 * Dummy file number for the transactions file.
-	 */
-	private static final long TRANSACTIONS_FILE_NUMBER = -1;
-
-
+	
 
 	///////////////////////////////////////////////////////////////////////////
 	// static methods //
@@ -56,118 +54,152 @@ public final class Storage
 		return milliseconds / ONE_MILLION;
 	}
 
-	/**
-	 * Returns the dummy file number for transaction files, which is the value <code>-1</code>.
-	 * <p>
-	 * Transaction files conceptually don't have a file number, but are subject to the {@link StorageNumberedFile}
-	 * type, so a dummy value is required. Since transaction files are planned to be replaced in the future
-	 * by meta data inlined directly in the storage files, a dummy value like this is a preferable solution
-	 * to an elaborate restructuring.
-	 *
-	 * @return the dummy file number for transaction files.
-	 */
-	public static final long transactionsFileNumber()
-	{
-		return TRANSACTIONS_FILE_NUMBER;
-	}
 
-	/**
-	 * Checks if the passed {@link StorageNumberedFile} is a transaction file by comparing its file number to
-	 * {@link Storage#transactionsFileNumber()}.
-	 *
-	 * @param file the {@link StorageNumberedFile} to be checked.
-	 *
-	 * @return whether the passed file is a transactions file.
-	 *
-	 * @see Storage#transactionsFileNumber()
-	 * @see Storage#isDataFile(StorageNumberedFile)
-	 */
-	public static final boolean isTransactionFile(final StorageNumberedFile file)
+	
+	public static NioFileSystem DefaultFileSystem()
 	{
-		return file.number() == TRANSACTIONS_FILE_NUMBER;
+		return NioFileSystem.New();
 	}
-
-	/**
-	 * Checks if the passed {@link StorageNumberedFile} is a storage data file.
-	 *
-	 * @param file the {@link StorageNumberedFile} to be checked.
-	 *
-	 * @return whether the passed file is a storage data file.
-	 *
-	 * @see Storage#isTransactionFile(StorageNumberedFile)
-	 */
-	public static final boolean isDataFile(final StorageNumberedFile file)
+	
+	public static ADirectory defaultStorageDirectory()
 	{
-		return file.number() > 0;
+		return defaultStorageDirectory(DefaultFileSystem());
 	}
-
+	
 	/**
-	 * {@linkDoc StorageFileProvider#New()}
+	 * Returns the default storage directory in the current working directory and with a filename defined by
+	 * {@link StorageLiveFileProvider.Defaults#defaultStorageDirectory}.
 	 *
-	 * @return {@linkDoc StorageFileProvider#New()@return}
+	 * @return the default storage directory located in the current working directory.
+	 */
+	public static ADirectory defaultStorageDirectory(final AFileSystem fileSystem)
+	{
+		return fileSystem.ensureRoot(StorageLiveFileProvider.Defaults.defaultStorageDirectory());
+	}
+	
+	/**
+	 * {@linkDoc StorageLiveFileProvider#New()}
+	 *
+	 * @return {@linkDoc StorageLiveFileProvider#New()@return}
 	 *
 	 * @see Storage#FileProvider(Path)
-	 * @see StorageFileProvider#New()
-	 * @see StorageFileProvider.Builder
-	 * @see StorageFileProvider.Defaults
+	 * @see StorageLiveFileProvider#New()
+	 * @see StorageLiveFileProvider.Builder
+	 * @see StorageLiveFileProvider.Defaults
 	 */
-	public static final StorageFileProvider FileProvider()
+	public static final StorageLiveFileProvider FileProvider()
 	{
-		return StorageFileProvider.New();
+		return StorageLiveFileProvider.New();
 	}
 
 	/**
 	 * Alias for {@code FileProvider(storageDirectory.toPath())}
 	 *
-	 * @param storageDirectory {@linkDoc StorageFileProvider#New(Path):}
+	 * @param storageDirectory {@linkDoc StorageLiveFileProvider#New(ADirectory):}
 	 *
-	 * @return {@linkDoc StorageFileProvider#New(Path)@return}
+	 * @return {@linkDoc StorageLiveFileProvider#New(ADirectory)@return}
 	 *
 	 * @deprecated replaced by {@link #FileProvider(Path)}
 	 */
 	@Deprecated
-	public static final StorageFileProvider FileProvider(final File storageDirectory)
+	public static final StorageLiveFileProvider FileProvider(final File storageDirectory)
 	{
 		return FileProvider(storageDirectory.toPath());
 	}
 
 	/**
-	 * {@linkDoc StorageFileProvider#New(Path)}
+	 * {@linkDoc StorageLiveFileProvider#New(ADirectory)}
 	 *
-	 * @param storageDirectory {@linkDoc StorageFileProvider#New(Path):}
+	 * @param storageDirectory {@linkDoc StorageLiveFileProvider#New(ADirectory):}
 	 *
-	 * @return {@linkDoc StorageFileProvider#New(Path)@return}
+	 * @return {@linkDoc StorageLiveFileProvider#New(ADirectory)@return}
 	 *
 	 * @see Storage#FileProvider()
-	 * @see StorageFileProvider#New(Path)
-	 * @see StorageFileProvider.Builder
-	 * @see StorageFileProvider.Defaults
+	 * @see StorageLiveFileProvider#New(Path)
+	 * @see StorageLiveFileProvider.Builder
+	 * @see StorageLiveFileProvider.Defaults
 	 */
-	public static final StorageFileProvider FileProvider(final Path storageDirectory)
+	public static final StorageLiveFileProvider FileProvider(final Path storageDirectory)
 	{
-		return StorageFileProvider.New(storageDirectory);
+		final NioFileSystem nfs = DefaultFileSystem();
+		
+		final ADirectory dir = nfs.ensureDirectory(storageDirectory);
+		
+		return StorageLiveFileProvider.New(dir);
+	}
+	
+	public static final StorageLiveFileProvider FileProvider(final ADirectory storageDirectory)
+	{
+		return StorageLiveFileProvider.New(storageDirectory);
 	}
 
 	/**
-	 * {@linkDoc StorageFileProvider#Builder()}
+	 * {@linkDoc StorageLiveFileProvider#Builder()}
 	 *
-	 * @return {@linkDoc StorageFileProvider#Builder()@return}
+	 * @return {@linkDoc StorageLiveFileProvider#Builder()@return}
 	 *
 	 * @see Storage#FileProvider()
 	 * @see Storage#FileProvider(Path)
-	 * @see StorageFileProvider.Builder
+	 * @see StorageLiveFileProvider.Builder
 	 */
-	public static final StorageFileProvider.Builder<?> FileProviderBuilder()
+	public static final StorageLiveFileProvider.Builder<?> FileProviderBuilder()
 	{
-		return StorageFileProvider.Builder();
+		return StorageLiveFileProvider.Builder();
 	}
+	
+	public static final StorageLiveFileProvider.Builder<?> FileProviderBuilder(final AFileSystem fileSystem)
+	{
+		return StorageLiveFileProvider.Builder(fileSystem);
+	}
+	
+	
+	
+	
+	public static final StorageBackupFileProvider BackupFileProvider()
+	{
+		return StorageBackupFileProvider.New();
+	}
+
+	@Deprecated
+	public static final StorageBackupFileProvider BackupFileProvider(final File storageDirectory)
+	{
+		return BackupFileProvider(storageDirectory.toPath());
+	}
+
+	public static final StorageBackupFileProvider BackupFileProvider(final Path storageDirectory)
+	{
+		// note that the backup's file system may potentially be completely different from the live file system.
+		final NioFileSystem nfs = Storage.DefaultFileSystem();
+		final ADirectory    dir = nfs.resolveDirectory(storageDirectory);
+		
+		return StorageBackupFileProvider.New(dir);
+	}
+	
+	public static final StorageBackupFileProvider BackupFileProvider(final ADirectory storageDirectory)
+	{
+		return StorageBackupFileProvider.New(storageDirectory);
+	}
+
+	public static final StorageBackupFileProvider.Builder<?> BackupFileProviderBuilder()
+	{
+		return StorageBackupFileProvider.Builder();
+	}
+	
+	public static final StorageBackupFileProvider.Builder<?> BackupFileProviderBuilder(final AFileSystem fileSystem)
+	{
+		return StorageBackupFileProvider.Builder(fileSystem);
+	}
+	
+	
+	
+	
 
 	/**
 	 * {@linkDoc StorageConfiguration#New()}
 	 *
 	 * @return {@linkDoc StorageConfiguration#New()@return}
 	 *
-	 * @see Storage#Configuration(StorageFileProvider)
+	 * @see Storage#Configuration(StorageLiveFileProvider)
 	 * @see StorageConfiguration#New()
 	 * @see StorageConfiguration.Builder
 	 */
@@ -177,18 +209,18 @@ public final class Storage
 	}
 
 	/**
-	 * {@linkDoc StorageConfiguration#New(StorageFileProvider)}
+	 * {@linkDoc StorageConfiguration#New(StorageLiveFileProvider)}
 	 *
-	 * @param fileProvider {@linkDoc StorageConfiguration#New(StorageFileProvider):}
+	 * @param fileProvider {@linkDoc StorageConfiguration#New(StorageLiveFileProvider):}
 	 *
-	 * @return {@linkDoc StorageConfiguration#New(StorageFileProvider)@return}
+	 * @return {@linkDoc StorageConfiguration#New(StorageLiveFileProvider)@return}
 	 *
 	 * @see Storage#Configuration()
-	 * @see StorageConfiguration#New(StorageFileProvider)
+	 * @see StorageConfiguration#New(StorageLiveFileProvider)
 	 * @see StorageConfiguration.Builder
 	 */
 	public static final StorageConfiguration Configuration(
-		final StorageFileProvider fileProvider
+		final StorageLiveFileProvider fileProvider
 	)
 	{
 		return StorageConfiguration.New(fileProvider);
@@ -200,7 +232,7 @@ public final class Storage
 	 * @return {@linkDoc StorageConfiguration#Builder()@return}
 	 *
 	 * @see Storage#Configuration()
-	 * @see Storage#Configuration(StorageFileProvider)
+	 * @see Storage#Configuration(StorageLiveFileProvider)
 	 * @see StorageConfiguration#Builder()
 	 * @see StorageConfiguration.Builder
 	 */
@@ -411,49 +443,68 @@ public final class Storage
 	{
 		return BackupSetup(backupDirectory.toPath());
 	}
-
+	
 	/**
-	 * {@linkDoc StorageBackupSetup#New(Path)}
+	 * {@linkDoc StorageBackupSetup#New(ADirectory)}
 	 *
-	 * @param backupDirectory {@linkDoc StorageBackupSetup#New(Path):}
+	 * @param backupDirectory {@linkDoc StorageBackupSetup#New(ADirectory):}
 	 *
-	 * @return {@linkDoc StorageBackupSetup#New(Path)@return}
+	 * @return {@linkDoc StorageBackupSetup#New(ADirectory)@return}
 	 *
-	 * @see StorageBackupSetup#New(StorageFileProvider)
+	 * @see StorageBackupSetup#New(StorageLiveFileProvider)
 	 * @see StorageBackupHandler
 	 */
 	public static final StorageBackupSetup BackupSetup(final Path backupDirectory)
+	{
+		// note that the backup's file system may potentially be completely different from the live file system.
+		final NioFileSystem nfs = Storage.DefaultFileSystem();
+		final ADirectory dir = nfs.ensureDirectory(backupDirectory);
+		
+		return BackupSetup(dir);
+	}
+	
+	/**
+	 * {@linkDoc StorageBackupSetup#New(ADirectory)}
+	 *
+	 * @param backupDirectory {@linkDoc StorageBackupSetup#New(ADirectory):}
+	 *
+	 * @return {@linkDoc StorageBackupSetup#New(ADirectory)@return}
+	 *
+	 * @see StorageBackupSetup#New(StorageLiveFileProvider)
+	 * @see StorageBackupHandler
+	 */
+	public static final StorageBackupSetup BackupSetup(final ADirectory backupDirectory)
 	{
 		return StorageBackupSetup.New(backupDirectory);
 	}
 
 	/**
-	 * {@linkDoc StorageBackupSetup#New(Path)}
+	 * {@linkDoc StorageBackupSetup#New(ADirectory)}
 	 *
 	 * @param backupDirectoryPath the path to the backup directory
 	 *
-	 * @return {@linkDoc StorageBackupSetup#New(Path)@return}
+	 * @return {@linkDoc StorageBackupSetup#New(ADirectory)@return}
 	 *
 	 * @see StorageBackupSetup#New(Path)
-	 * @see StorageBackupSetup#New(StorageFileProvider)
+	 * @see StorageBackupSetup#New(StorageLiveFileProvider)
 	 * @see StorageBackupHandler
 	 */
 	public static final StorageBackupSetup BackupSetup(final String backupDirectoryPath)
 	{
-		return StorageBackupSetup.New(Paths.get(backupDirectoryPath));
+		return BackupSetup(Paths.get(backupDirectoryPath));
 	}
 
 	/**
-	 * {@linkDoc StorageBackupSetup#New(StorageFileProvider)}
+	 * {@linkDoc StorageBackupSetup#New(StorageBackupFileProvider)}
 	 *
-	 * @param backupFileProvider {@linkDoc StorageBackupSetup#New(StorageFileProvider):}
+	 * @param backupFileProvider {@linkDoc StorageBackupSetup#New(StorageBackupFileProvider):}
 	 *
-	 * @return {@linkDoc StorageBackupSetup#New(StorageFileProvider)@return}
+	 * @return {@linkDoc StorageBackupSetup#New(StorageBackupFileProvider)@return}
 	 *
 	 * @see StorageBackupSetup#New(Path)
 	 * @see StorageBackupHandler
 	 */
-	public static final StorageBackupSetup BackupSetup(final StorageFileProvider backupFileProvider)
+	public static final StorageBackupSetup BackupSetup(final StorageBackupFileProvider backupFileProvider)
 	{
 		return StorageBackupSetup.New(backupFileProvider);
 	}

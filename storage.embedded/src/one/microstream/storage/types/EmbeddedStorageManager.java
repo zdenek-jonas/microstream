@@ -2,10 +2,10 @@ package one.microstream.storage.types;
 
 import static one.microstream.X.notNull;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
+import one.microstream.afs.AFile;
 import one.microstream.collections.EqHashTable;
 import one.microstream.collections.XSort;
 import one.microstream.collections.types.XGettingEnum;
@@ -473,11 +473,11 @@ public interface EmbeddedStorageManager extends StorageManager
 
 		@Override
 		public final void exportChannels(
-			final StorageIoHandler fileHandler             ,
-			final boolean          performGarbageCollection
+			final StorageLiveFileProvider fileProvider             ,
+			final boolean             performGarbageCollection
 		)
 		{
-			this.singletonConnection().exportChannels(fileHandler, performGarbageCollection);
+			this.singletonConnection().exportChannels(fileProvider, performGarbageCollection);
 		}
 
 		@Override
@@ -490,7 +490,7 @@ public interface EmbeddedStorageManager extends StorageManager
 		}
 
 		@Override
-		public final void importFiles(final XGettingEnum<Path> importFiles)
+		public final void importFiles(final XGettingEnum<AFile> importFiles)
 		{
 			this.singletonConnection().importFiles(importFiles);
 		}

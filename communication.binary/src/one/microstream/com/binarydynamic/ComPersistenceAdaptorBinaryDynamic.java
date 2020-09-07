@@ -30,6 +30,7 @@ import one.microstream.persistence.types.PersistenceTypeDictionaryManager;
 import one.microstream.persistence.types.PersistenceTypeDictionaryStorer;
 import one.microstream.persistence.types.PersistenceTypeDictionaryView;
 import one.microstream.persistence.types.PersistenceTypeHandlerManager;
+import one.microstream.persistence.types.PersistenceWriteController;
 import one.microstream.util.BufferSizeProvider;
 
 public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor<ComConnection>
@@ -189,12 +190,19 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		final ComPersistenceChannelBinary.Default channel = ComPersistenceChannelBinary.New(
 				connection,
 				this.bufferSizeProvider(),
-				hostFoundation
+				hostFoundation,
+				this.comWriteController()
 			);
 		
 		hostFoundation.setPersistenceChannel(channel);
 		
 		return hostFoundation;
+	}
+	
+	private PersistenceWriteController comWriteController()
+	{
+		// (06.08.2020 TM)TODO: Com Layer WriteController
+		return PersistenceWriteController.Enabled();
 	}
 	
 	@Override
@@ -222,7 +230,8 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		final ComPersistenceChannelBinary.Default channel = ComPersistenceChannelBinary.New(
 				connection,
 				this.bufferSizeProvider(),
-				clientFoundation
+				clientFoundation.Clone(),
+				this.comWriteController()
 			);
 		
 		clientFoundation.setPersistenceChannel(channel);
