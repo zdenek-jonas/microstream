@@ -230,7 +230,7 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		final ComPersistenceChannelBinary.Default channel = ComPersistenceChannelBinary.New(
 				connection,
 				this.bufferSizeProvider(),
-				clientFoundation.Clone(),
+				clientFoundation,
 				this.comWriteController()
 			);
 		
