@@ -15,6 +15,7 @@ import one.microstream.com.ComHostChannel;
 import one.microstream.com.ComPersistenceAdaptor;
 import one.microstream.com.ComPersistenceAdaptorCreator;
 import one.microstream.com.ComProtocol;
+import one.microstream.com.binary.ComBinaryPersistenceRootsProvider;
 import one.microstream.com.binary.ComPersistenceChannelBinary;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.binary.types.BinaryPersistenceFoundation;
@@ -142,7 +143,11 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 			)
 			.setTypeDictionaryStorer(
 				createNoOpTypDictionaryStorer()
+			)
+			.setRootsProvider(
+				new ComBinaryPersistenceRootsProvider()
 			);
+			
 		
 		return initFoundation;
 	}
