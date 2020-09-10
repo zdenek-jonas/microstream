@@ -236,7 +236,7 @@ public final class XSockets
 		public void execute(SocketChannel channel, ByteBuffer buffer) throws ComException; // funny "public"
 	}
 	
-	public static void read(final SocketChannel channel, final ByteBuffer buffer) throws ComException
+	public static int read(final SocketChannel channel, final ByteBuffer buffer) throws ComException
 	{
 		final int numBytesRead;
 		try
@@ -253,6 +253,8 @@ public final class XSockets
 		{
 			throw new ComException("channel reached end of stream");
 		}
+		
+		return numBytesRead;
 	}
 	
 	public static ByteBuffer read(final SocketChannel channel, final ByteBuffer buffer, final int length)
@@ -267,6 +269,24 @@ public final class XSockets
 		{
 			(checkedBuffer = buffer).clear().limit(length);
 		}
+				
+		do
+		{
+			read(channel, checkedBuffer);
+			
+			if(checkedBuffer.hasRemaining())
+			{
+				try
+				{
+					Thread.sleep(IO_LOOP_SLEEP_TIME);
+				}
+				catch(final InterruptedException e)
+				{
+					throw new ComException(e);
+				}
+			}
+		}
+		while(checkedBuffer.hasRemaining());
 		
 		read(channel, checkedBuffer);
 		
