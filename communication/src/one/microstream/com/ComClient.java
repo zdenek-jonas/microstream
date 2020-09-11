@@ -1,11 +1,14 @@
 package one.microstream.com;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 public interface ComClient<C>
 {
 	public ComClientChannel<C> connect() throws ComException;
 	
+	ComClientChannel<C> connect(int retries, Duration retryDelay) throws ComException;
+
 	public InetSocketAddress hostAddress();
 	
 	
@@ -81,7 +84,13 @@ public interface ComClient<C>
 		@Override
 		public ComClientChannel<C> connect() throws ComException
 		{
-			final C                   conn     = this.connectionHandler.openConnection(this.hostAddress);
+			return this.connect(0, Duration.ZERO);
+		}
+		
+		@Override
+		public ComClientChannel<C> connect(final int retries, final Duration retryDelay) throws ComException
+		{
+			final C                   conn     = this.connectionHandler.openConnection(this.hostAddress, retries, retryDelay);
 			
 			this.connectionHandler.sendClientIdentifer(conn, this.peerIdentifier.getBuffer());
 			this.connectionHandler.enableSecurity(conn);

@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 
 import one.microstream.chars.XChars;
 import one.microstream.chars._charArrayRange;
@@ -18,6 +19,8 @@ public interface ComConnectionHandler<C>
 	public ComConnectionListener<C> createConnectionListener(InetSocketAddress address);
 	
 	public C openConnection(InetSocketAddress address);
+	
+	public C openConnection(InetSocketAddress hostAddress, int retries, Duration retryDelay);
 	
 	public void prepareReading(C connection);
 	
@@ -103,6 +106,42 @@ public interface ComConnectionHandler<C>
 			final SocketChannel clientChannel = XSockets.openChannel(address);
 						
 			return new ComConnection.Default(clientChannel);
+		}
+		
+		@Override
+		public ComConnection openConnection(final InetSocketAddress address, final int retries, final Duration retryDelay)
+		{
+			final int tries = 0;
+			
+			do
+			{
+				try
+				{
+					return this.openConnection(address);
+				}
+				catch(final Exception connectException)
+				{
+					if(tries <= retries)
+					{
+						try
+						{
+							Thread.sleep(retryDelay.toMillis());
+						}
+						catch (final InterruptedException interruptedException)
+						{
+							throw new ComException("Connect to " + address + " failed", interruptedException);
+						}
+					}
+					else
+					{
+						throw new ComException("Connect to " + address + " failed", connectException);
+					}
+				}
+			}
+			while(tries <= retries);
+			
+			//Should not be reached. If a connection can't be opened an exception should have been thrown already
+			throw new ComException("Connect to " + address + " failed");
 		}
 
 		@Override
@@ -221,5 +260,7 @@ public interface ComConnectionHandler<C>
 		}
 
 	}
+
+	
 	
 }

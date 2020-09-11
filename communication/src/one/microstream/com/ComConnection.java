@@ -24,7 +24,7 @@ public interface ComConnection
 	public class Default implements ComConnection
 	{
 		private final SocketChannel channel;
-		private int readTimeOut = 1000;
+		private int readTimeOut = 10000;
 		
 		public Default(final SocketChannel channel)
 		{
