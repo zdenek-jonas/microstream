@@ -111,12 +111,13 @@ public interface ComConnectionHandler<C>
 		@Override
 		public ComConnection openConnection(final InetSocketAddress address, final int retries, final Duration retryDelay)
 		{
-			final int tries = 0;
+			int tries = 0;
 			
 			do
 			{
 				try
 				{
+					tries++;
 					return this.openConnection(address);
 				}
 				catch(final Exception connectException)
