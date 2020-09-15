@@ -1,6 +1,7 @@
 package one.microstream.com.binarydynamic.test;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 
 import one.microstream.com.ComChannel;
 import one.microstream.com.ComClient;
@@ -28,11 +29,12 @@ public class MainTestComTLSClientDynamic
 				new TLSParametersProvider.Default(),
 				new SecureRandomProvider.Default()
 			))
+			.setClientConnectTimeout(10000)
 			.createClient();
 								
 		
 		// create a channel by connecting the client
-		final ComChannel channel = client.connect();
+		final ComChannel channel = client.connect(5, Duration.ofMillis(1000));
 		
 		final Object o = channel.receive();
 		

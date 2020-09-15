@@ -20,6 +20,8 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public int getInactivityTimeout();
 	
+	public int getClientConnectTimeout();
+	
 	public PersistenceIdStrategy getClientIdStrategy();
 			
 	public ComProtocolProvider<C> getProtocolProvider();
@@ -73,7 +75,18 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 	
 	public F setHostByteOrder(ByteOrder hostByteOrder);
 	
+	/**
+	 * 
+	 * @param inactivity timeout in milliseconds
+	 * @return this
+	 */
 	public F setInactivityTimeout(int inactivityTimeout);
+	
+	/**
+	 * @param Timeout for client connection attempts in milliseconds
+	 * @return this
+	 */
+	public F setClientConnectTimeout(int clientConnectTimeout);
 	
 	public F setClientIdStrategy(PersistenceIdStrategy idStrategy);
 	
@@ -146,6 +159,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		private int                             port                     ;
 		private InetSocketAddress               hostBindingAddress       ;
 		private InetSocketAddress               clientTargetAddress      ;
+		private int								clientConnectTimeout     ;
 		
 		private String                          protocolName             ;
 		private String                          protocolVersion          ;
@@ -214,6 +228,12 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		public int getInactivityTimeout()
 		{
 			return this.inactivityTimeout;
+		}
+		
+		@Override
+		public int getClientConnectTimeout()
+		{
+			return this.clientConnectTimeout;
 		}
 		
 		@Override
@@ -444,6 +464,7 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 				this.connectionHandler = this.ensureConnectionHandler();
 			}
 
+			this.connectionHandler.setClientConnectTimeout(this.getClientConnectTimeout());
 			return this.getConnectionLogicDispatcher().dispatch(this.connectionHandler);
 		}
 		
@@ -675,6 +696,13 @@ public interface ComFoundation<C, F extends ComFoundation<C, ?>>
 		public F setClientIdStrategy(final PersistenceIdStrategy idStrategy)
 		{
 			this.clientIdStrategy = idStrategy;
+			return this.$();
+		}
+		
+		@Override
+		public F setClientConnectTimeout(final int clientConnectTimeout)
+		{
+			this.clientConnectTimeout = clientConnectTimeout;
 			return this.$();
 		}
 				

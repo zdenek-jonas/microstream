@@ -5,6 +5,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import one.microstream.chars.XChars;
 import one.microstream.chars._charArrayRange;
@@ -21,7 +25,7 @@ public interface ComConnectionHandler<C>
 	public C openConnection(InetSocketAddress address);
 	
 	public C openConnection(InetSocketAddress hostAddress, int retries, Duration retryDelay);
-	
+		
 	public void prepareReading(C connection);
 	
 	public void prepareWriting(C connection);
@@ -56,6 +60,8 @@ public interface ComConnectionHandler<C>
 		
 	public void setInactivityTimeout(C connection, int inactivityTimeout);
 	
+	public void setClientConnectTimeout(int clientConnectTimeout);
+	
 	public void sendClientIdentifer(C connection, ByteBuffer buffer);
 	
 	public void receiveClientIdentifer(final C connection, final ByteBuffer buffer);
@@ -74,6 +80,7 @@ public interface ComConnectionHandler<C>
 		////////////////////
 		
 		private final int protocolLengthDigitCount = Com.defaultProtocolLengthDigitCount();
+		private long clientConnectTimeout;
 				
 			
 		///////////////////////////////////////////////////////////////////////////
@@ -90,6 +97,31 @@ public interface ComConnectionHandler<C>
 		// methods //
 		////////////
 		
+		
+		private ComConnection openConnection(final InetSocketAddress address, final long timeout)
+		{
+			final ExecutorService executor = Executors.newSingleThreadExecutor();
+			
+			try
+			{
+				return executor
+					.submit(() -> { return this.openConnection(address); })
+					.get(timeout, TimeUnit.MILLISECONDS);
+			}
+			catch(final TimeoutException e)
+			{
+				throw new ComExceptionTimeout("Open connection failed because of timeout");
+			}
+			catch (final Exception e)
+			{
+				throw new ComException("Open connection failed", e);
+			}
+			finally
+			{
+				executor.shutdownNow();
+			}
+		}
+		
 		@Override
 		public ComConnectionListener<ComConnection> createConnectionListener(
 			final InetSocketAddress address
@@ -99,7 +131,7 @@ public interface ComConnectionHandler<C>
 			
 			return ComConnectionListener.Default(serverSocketChannel);
 		}
-		
+				
 		@Override
 		public ComConnection openConnection(final InetSocketAddress address)
 		{
@@ -118,6 +150,10 @@ public interface ComConnectionHandler<C>
 				try
 				{
 					tries++;
+					if(this.clientConnectTimeout > 0)
+					{
+						return this.openConnection(address, this.clientConnectTimeout);
+					}
 					return this.openConnection(address);
 				}
 				catch(final Exception connectException)
@@ -259,9 +295,13 @@ public interface ComConnectionHandler<C>
 		{
 			connection.setTimeOut(inactivityTimeout);
 		}
-
+		
+		@Override
+		public void setClientConnectTimeout(final int clientConnectTimeout)
+		{
+			this.clientConnectTimeout = clientConnectTimeout;
+		}
+		
 	}
-
-	
 	
 }
