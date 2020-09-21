@@ -1,7 +1,5 @@
 package one.microstream.com.binarydynamic;
 
-import one.microstream.exceptions.BaseException;
-
 public class ComMessageClientError extends ComMessageStatus
 {
 	///////////////////////////////////////////////////////////////////////////
@@ -15,10 +13,10 @@ public class ComMessageClientError extends ComMessageStatus
 	// constructors //
 	/////////////////
 	
-	public ComMessageClientError(final BaseException e)
+	public ComMessageClientError(final RuntimeException runtimeException)
 	{
 		super(false);
-		this.errorMessage = e.getMessage();
+		this.errorMessage = runtimeException.getMessage();
 	}
 
 	///////////////////////////////////////////////////////////////////////////

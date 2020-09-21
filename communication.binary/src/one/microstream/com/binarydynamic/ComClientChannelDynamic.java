@@ -66,8 +66,12 @@ public class ComClientChannelDynamic<C>
 			new ComHandlerReceiveMessageStatus(this));
 		
 		this.handlers.registerSendHandler(
-				ComMessageStatus.class,
+			ComMessageStatus.class,
 			new ComHandlerReceiveMessageStatus(this));
+		
+		this.handlers.registerSendHandler(
+			ComMessageClientError.class,
+			new ComHandlerSendMessageClientError(this));
 	}
 
 
