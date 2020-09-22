@@ -5,6 +5,7 @@ import one.microstream.com.ComClientChannel;
 import one.microstream.com.ComProtocol;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.types.PersistenceManager;
+import one.microstream.persistence.types.PersistenceTypeHandlerEnsurer;
 import one.microstream.persistence.types.PersistenceTypeHandlerManager;
 
 public class ComClientChannelDynamic<C>
@@ -28,12 +29,13 @@ public class ComClientChannelDynamic<C>
 		final ComProtocol protocol,
 		final ComClient<C> parent,
 		final PersistenceTypeHandlerManager<Binary> typeHandlerManager,
-		final ComTypeDefinitionBuilder typeDefintionBuilder
+		final ComTypeDefinitionBuilder typeDefintionBuilder,
+		final PersistenceTypeHandlerEnsurer<Binary> typeHandlerEnsurer
 		)
 	{
 		super(persistenceManager, connection, protocol);
 		this.parent = parent;
-		this.initalizeHandlersInternal(typeHandlerManager, typeDefintionBuilder);
+		this.initalizeHandlersInternal(typeHandlerManager, typeDefintionBuilder, typeHandlerEnsurer);
 	}
 
 	
@@ -43,14 +45,15 @@ public class ComClientChannelDynamic<C>
 
 	private void initalizeHandlersInternal(
 		final PersistenceTypeHandlerManager<Binary> typeHandlerManager,
-		final ComTypeDefinitionBuilder typeDefintionBuilder)
+		final ComTypeDefinitionBuilder typeDefintionBuilder, final PersistenceTypeHandlerEnsurer<Binary> typeHandlerEnsurer)
 	{
 		this.handlers.registerReceiveHandler(
 			ComMessageNewType.class,
 			new ComHandlerReceiveMessageNewType(
 				this,
 				typeHandlerManager,
-				typeDefintionBuilder
+				typeDefintionBuilder,
+				typeHandlerEnsurer
 				));
 		
 		this.handlers.registerReceiveHandler(

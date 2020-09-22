@@ -271,8 +271,16 @@ public class ComPersistenceAdaptorBinaryDynamic implements ComPersistenceAdaptor
 		
 		
 		final PersistenceManager<?> pm = clientFoundation.createPersistenceManager();
+	
 		
-		return new ComClientChannelDynamic<>(pm, connection, protocol, parent, thm, typeDefinitionBuilder);
+		return new ComClientChannelDynamic<>(
+			pm,
+			connection,
+			protocol,
+			parent,
+			thm,
+			typeDefinitionBuilder,
+			this.foundation.getTypeHandlerEnsurer());
 		
 	}
 	
