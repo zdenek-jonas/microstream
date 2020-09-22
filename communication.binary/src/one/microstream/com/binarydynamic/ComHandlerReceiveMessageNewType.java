@@ -2,7 +2,6 @@ package one.microstream.com.binarydynamic;
 
 import one.microstream.collections.types.XGettingSequence;
 import one.microstream.equality.Equalator;
-import one.microstream.exceptions.BaseException;
 import one.microstream.persistence.binary.types.Binary;
 import one.microstream.persistence.types.PersistenceTypeDefinition;
 import one.microstream.persistence.types.PersistenceTypeDescriptionMember;
@@ -79,13 +78,13 @@ public class ComHandlerReceiveMessageNewType implements ComHandlerReceive<ComMes
 				else
 				{
 					this.typeHandlerManager.updateCurrentHighestTypeId(ptd.typeId());
-					throw new BaseException("Type definition mismatch!");
+					throw new ComExceptionTypeMismatch(ptd.typeId(), ptd.type());
 				}
 							
 			}
 												
 		}
-		catch(final BaseException e)
+		catch(final ComExceptionTypeMismatch e)
 		{
 			this.comChannel.send(new ComMessageClientError(e));
 			throw e;
