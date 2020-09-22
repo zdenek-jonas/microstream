@@ -35,7 +35,7 @@ public class ComHandlerSendMessageNewType implements ComHandlerSend<ComMessageNe
 				
 		if(answer instanceof ComMessageClientError)
 		{
-			throw new ComException(((ComMessageClientError) answer).getErrorMessage());
+			throw new ComException("Client error message received: " + ((ComMessageClientError) answer).getErrorMessage());
 		}
 				
 		return null;
