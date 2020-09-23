@@ -78,7 +78,7 @@ public class ComHandlerReceiveMessageNewType implements ComHandlerReceive<ComMes
 				else
 				{
 					this.typeHandlerManager.updateCurrentHighestTypeId(ptd.typeId());
-					throw new ComExceptionTypeMismatch(ptd.typeId(), ptd.type());
+					throw new ComExceptionTypeMismatch(ptd.typeId(), ptd.type().getName());
 				}
 							
 			}

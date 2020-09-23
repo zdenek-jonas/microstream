@@ -7,18 +7,18 @@ public class ComMessageClientTypeMismatch extends ComMessageStatus
 	////////////////////
 	
 	private final long typeId;
-	private final Class<?> type;
+	private final String typeName;
 
 	
 	///////////////////////////////////////////////////////////////////////////
 	// constructors //
 	/////////////////
 	
-	public ComMessageClientTypeMismatch(final long typeId, final Class<?> type)
+	public ComMessageClientTypeMismatch(final long typeId, String typeName)
 	{
 		super(false);
 		this.typeId = typeId;
-		this.type = type;
+		this.typeName = typeName;
 	}
 
 
@@ -32,8 +32,8 @@ public class ComMessageClientTypeMismatch extends ComMessageStatus
 	}
 
 
-	protected Class<?> getType()
+	protected String getType()
 	{
-		return this.type;
+		return this.typeName;
 	}
 }
