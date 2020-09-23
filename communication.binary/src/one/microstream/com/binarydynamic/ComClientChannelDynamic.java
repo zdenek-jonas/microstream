@@ -73,7 +73,7 @@ public class ComClientChannelDynamic<C>
 			new ComHandlerReceiveMessageStatus(this));
 		
 		this.handlers.registerSendHandler(
-			ComMessageClientError.class,
+			ComMessageClientTypeMismatch.class,
 			new ComHandlerSendMessageClientTypeMismatch(this));
 	}
 
