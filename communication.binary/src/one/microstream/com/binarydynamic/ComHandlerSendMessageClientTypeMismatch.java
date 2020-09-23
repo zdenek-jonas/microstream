@@ -1,6 +1,6 @@
 package one.microstream.com.binarydynamic;
 
-public class ComHandlerSendMessageClientError implements ComHandlerSend<ComMessageClientError>
+public class ComHandlerSendMessageClientTypeMismatch implements ComHandlerSend<ComMessageClientTypeMismatch>
 {
 	///////////////////////////////////////////////////////////////////////////
 	// instance fields //
@@ -13,7 +13,7 @@ public class ComHandlerSendMessageClientError implements ComHandlerSend<ComMessa
 	// constructors //
 	/////////////////
 	
-	public ComHandlerSendMessageClientError(
+	public ComHandlerSendMessageClientTypeMismatch(
 		final ComChannelDynamic<?> channel
 	)
 	{
@@ -26,7 +26,7 @@ public class ComHandlerSendMessageClientError implements ComHandlerSend<ComMessa
 	////////////
 		
 	@Override
-	public Void sendMessage(final ComMessageClientError message)
+	public Void sendMessage(final ComMessageClientTypeMismatch message)
 	{
 		this.comChannel.persistenceManager.store(message);
 		return null;
@@ -35,7 +35,7 @@ public class ComHandlerSendMessageClientError implements ComHandlerSend<ComMessa
 	@Override
 	public Object sendMessage(final Object messageObject)
 	{
-		final ComMessageClientError message = (ComMessageClientError)messageObject;
+		final ComMessageClientTypeMismatch message = (ComMessageClientTypeMismatch)messageObject;
 		return this.sendMessage(message);
 	}
 	

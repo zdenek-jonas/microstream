@@ -48,7 +48,7 @@ public class ComHostChannelDynamic<C>
 		
 		this.handlers.registerReceiveHandler(
 			ComMessageClientError.class,
-			new ComHandlerReceiveClientError(this));
+			new ComHandlerReceiveMessageClientTypeMismatch(this));
 		
 		this.handlers.registerReceiveHandler(
 			ComMessageStatus.class,

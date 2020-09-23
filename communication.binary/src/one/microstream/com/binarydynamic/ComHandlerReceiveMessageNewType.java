@@ -86,7 +86,7 @@ public class ComHandlerReceiveMessageNewType implements ComHandlerReceive<ComMes
 		}
 		catch(final ComExceptionTypeMismatch e)
 		{
-			this.comChannel.send(new ComMessageClientError(e));
+			this.comChannel.send(new ComMessageClientTypeMismatch(e.getTypeId(), e.getType()));
 			throw e;
 		}
 		

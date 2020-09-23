@@ -1,7 +1,5 @@
 package one.microstream.com.binarydynamic;
 
-import one.microstream.com.ComException;
-
 public class ComHandlerSendMessageNewType implements ComHandlerSend<ComMessageNewType>
 {
 	///////////////////////////////////////////////////////////////////////////
@@ -33,9 +31,12 @@ public class ComHandlerSendMessageNewType implements ComHandlerSend<ComMessageNe
 	{
 		final ComMessageStatus answer = (ComMessageStatus)this.comChannel.requestUnhandled(message);
 				
-		if(answer instanceof ComMessageClientError)
+		if(answer instanceof ComMessageClientTypeMismatch)
 		{
-			throw new ComException("Client error message received: " + ((ComMessageClientError) answer).getErrorMessage());
+			throw new ComExceptionTypeMismatch(
+				((ComMessageClientTypeMismatch) answer).getTypeId(),
+				((ComMessageClientTypeMismatch) answer).getType()
+			);
 		}
 				
 		return null;

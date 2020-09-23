@@ -74,7 +74,7 @@ public class ComClientChannelDynamic<C>
 		
 		this.handlers.registerSendHandler(
 			ComMessageClientError.class,
-			new ComHandlerSendMessageClientError(this));
+			new ComHandlerSendMessageClientTypeMismatch(this));
 	}
 
 

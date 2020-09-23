@@ -1,5 +1,7 @@
 package one.microstream.com;
 
+import one.microstream.meta.XDebug;
+
 public interface ComHostExceptionHandler<C>
 {
 	public void handleException(Throwable exception, ComChannel channel);
@@ -38,8 +40,8 @@ public interface ComHostExceptionHandler<C>
 		@Override
 		public void handleException(final Throwable exception, final ComChannel channel)
 		{
-			//XDebug.println("Handled channel exception");
-			//exception.printStackTrace();
+			XDebug.println("Handled channel exception");
+			exception.printStackTrace();
 			ComHostExceptionHandler.defaultHandleException(exception, channel);
 		}
 

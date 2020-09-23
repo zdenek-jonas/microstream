@@ -20,7 +20,7 @@ public class ComBinaryDynamic
 			.setPersistenceAdaptorCreator(DefaultPersistenceAdaptorCreator())
 			.setHostIdStrategy(ComDynamicIdStrategy.New(1_000_000_000_000_000_000L))
 			.setClientIdStrategy(ComDynamicIdStrategy.New(4_100_000_000_000_000_000L))
-			.registerEntityTypes(ComMessageNewType.class, ComMessageClientError.class, ComMessageStatus.class, ComMessageData.class)
+			.registerEntityTypes(ComMessageNewType.class, ComMessageClientTypeMismatch.class, ComMessageStatus.class, ComMessageData.class)
 		;
 	}
 
