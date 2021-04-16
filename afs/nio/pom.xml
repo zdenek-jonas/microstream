@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
@@ -12,7 +14,7 @@
 	</parent>
 
 	<artifactId>microstream-afs-nio</artifactId>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>one.microstream</groupId>
@@ -20,5 +22,32 @@
 			<version>04.02.00-MS-GA-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
-	
+
+	<profiles>
+		<profile>
+			<id>test-compile</id>
+			<activation>
+				<property>
+					<name>maven.test.skip</name>
+					<value>!true</value>
+				</property>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>one.microstream</groupId>
+					<artifactId>microstream-afs</artifactId>
+					<version>04.02.00-MS-GA-SNAPSHOT</version>
+					<classifier>tests</classifier>
+					<scope>test</scope>
+				</dependency>
+				<dependency>
+					<groupId>com.google.jimfs</groupId>
+					<artifactId>jimfs</artifactId>
+					<version>1.2</version>
+					<scope>test</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 </project>
